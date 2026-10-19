@@ -1,104 +1,136 @@
 # AI Digital Twin
 
-A portfolio site whose chat answers questions about real work, cites the document each
-claim came from, and refuses when the answer is not in its corpus.
+A portfolio whose chat answers questions about real project work, and refuses when the
+written record does not support an answer.
 
-The interesting part is not the chat window. It is that the system abstains instead of
-guessing. Every answer is retrieved from a fixed corpus of project write-ups, every
-factual sentence carries a marker that resolves to a retrieved passage, and an answer
-with no valid citation is discarded and replaced by a structured refusal that names
-what the corpus does cover.
+**Live:** https://jouselt.github.io/ai-digital-twin-portfolio/
 
-## Status
+Three properties, each of which most portfolio chatbots skip:
 
-The product direction changed on 2026-10-19: **the model runs in the visitor's browser**
-with WebLLM over WebGPU, not on a server. That removes the server from the answer path,
-so retrieval, generation, citation checking and abstention all happen client side, and the
-site can be served as static files.
+1. **Every factual sentence carries a citation** that resolves to the passage it came
+   from, and the passage is openable in the page.
+2. **The system refuses** when the corpus does not cover the question, and names what
+   is missing instead of apologising vaguely.
+3. **The answer path is observable**: a trace id, the passages retrieved, a grounding
+   verdict, and the latency of the compute.
 
-Measured before committing to it (HuggingFace API, 2026-10-19):
+The model runs in the visitor's browser on WebGPU. No server, no API key, no cost per
+question, and nothing typed leaves the machine.
 
-| Model | Download |
-|---|---|
-| Qwen2.5-0.5B-Instruct-q4f16 | 290 MB |
-| Llama-3.2-1B-Instruct-q4f32 | 705 MB |
-| Qwen2.5-1.5B-Instruct-q4f16 | 880 MB |
-| snowflake-arctic-embed-s-q0f32 | 67 MB |
-
-The smallest viable pair is 357 MB, which is why the browser path ships with a static
-fallback: a visitor without WebGPU, or on a slow connection, must still get an answer
-instead of a progress bar.
-
-Built and green:
-
-- `libs/contracts`: wire types plus the SSE codec, so a frame shape cannot drift between
-  producer and consumer (5 gate tests).
-- `libs/twin-core`: the whole answer path with no framework import. Frame order, the
-  guard that keeps the refusal token out of the transcript, cosine retrieval with the
-  score floor, the citation gate and the three abstention reasons (29 gate tests).
-- `apps/api`: the server variant, kept while the browser path is built. Its chat service
-  is now a thin adapter over `@twin/core`, so the two cannot diverge (63 gate tests, 5
-  skipped without a database).
-
-Not built yet: the corpus bundle builder, the WebLLM generator, the Angular pane, evals,
-and deployment.
-
-## Stack
-
-Versions measured from the lockfile on 2026-10-19:
-
-| Component | Version |
-|---|---|
-| Angular | 20.3.34 (zoneless, standalone) |
-| Angular CLI | 20.3.40 |
-| NestJS | 11.0.1 (server variant) |
-| Node | 22.22.3 |
-| npm | 10.9.8 |
-| Generation (browser) | WebLLM over WebGPU, model chosen at load |
-| Embeddings (browser) | `snowflake-arctic-embed-s` via WebLLM |
-| Postgres (server variant only) | 16 with pgvector |
-
-No cloud AI key is used anywhere, and on the browser path no request leaves the machine.
-
-## Layout
+## How it works
 
 ```
-apps/web              Angular application
-apps/api              NestJS application
-apps/api/migrations   SQL migrations, idempotent, applied with psql
-libs/contracts        wire types and the SSE codec, no framework imports
-infra/nixos           NixOS module (planned)
-corpus/projects       source documents that become chunks (planned)
+corpus/projects/*.md        9 written project records, front matter + prose
+        |
+        v  build step (npm run bundle)
+corpus/bundle.json          38 chunks, 44.8 KB, no vectors, content-hashed
+        |
+        v  first visit, in the browser
+snowflake-arctic-embed-s    embeds every chunk once, cached in IndexedDB by bundle hash
+        |
+        v  per question
+cosine retrieval            top 6 passages above a floor
+        |
+        v
+Qwen2.5 in WebLLM           streams an answer that must cite [n]
+        |
+        v
+citation validator          every marker resolves?  -> done
+                            no markers at all?       -> no_citations
+                            marker that is not real? -> unknown_citations
+                            markers with no prose?   -> no_prose
+        |
+        v
+extractive fallback         if the model failed but a passage matches the question,
+                            quote it and label it "Quoted from the record, not generated"
 ```
 
-## Commands
+Deterministic guards run before and after the model:
+
+- **intent**: a greeting or a question about the tool is answered from a canned text,
+  with no model load at all.
+- **coverage**: a company the corpus never mentions is refused immediately. Measured
+  reason this exists: "What did he ship for Carnival?" (covered) scored 0.73 and
+  "What did he ship for autodesk?" (not in the corpus) scored 0.71 to 0.74. Cosine
+  similarity on nine documents does not separate the two, so no threshold ever fires.
+- **prose**: markers alone are not a claim. The guard once approved an answer whose
+  entire text was `[1][4]`.
+
+## Measured, not claimed
+
+The evals ask whether the visitor got the promised behaviour: a cited answer, a refusal
+that names the missing record, a canned intro, or an honest abstention. Fourteen cases,
+run in a real browser against the real model.
+
+| Model | Download | Cases passed | Generated prose |
+|---|---|---|---|
+| Qwen2.5-0.5B (Fast) | 290 MB | 14/14 | 4 of 6 covered |
+
+Raw runs live in `evals/results/`. The caveat is written into each file: with the 0.5B,
+two covered questions were answered by the extractive fallback, so what the run supports
+is that the product always returns evidence, not that the small model always writes.
+
+The model is selectable in the page. `?model=better` measures the 1.5B.
+
+## Cost of all this, in bytes
+
+| What | Raw | Over the wire |
+|---|---|---|
+| Page (initial) | 277 kB | 75 kB |
+| WebLLM runtime, lazy | 6.15 MB | 1.46 MB |
+| Embedding model, once | 67 MB | — |
+| Chat model, once | 290 MB | — |
+
+A visitor without WebGPU downloads 75 kB and gets the readable project index. Nothing
+downloads a model until it is asked to answer. Getting this split required building the
+shared libraries as both ESM and CommonJS: esbuild cannot code-split a CommonJS dist,
+and the whole 6.4 MB was landing in the initial bundle.
+
+## Run it
 
 ```bash
-npm install
-npm run typecheck         # contracts build + tsc over api, web and test files
-npm run test:contracts    # contract gate tests
-npm run --workspace @twin/api test
-
-# local database: Postgres 16 + pgvector in Docker, never on 5432
-npm run db:up             # docker compose up -d postgres
-npm run db:migrate        # applies apps/api/migrations/*.sql, safe to re-run
-npm run test:db           # the real-database suite against that container
+npm ci
+npm run build:libs          # @twin/contracts and @twin/core
+npm run bundle              # corpus -> apps/web/public/corpus/bundle.json
+npm run --workspace @twin/web start
 ```
 
-The database suite is skipped, not failed, when `DATABASE_URL` is unset, so the default
-test run needs no services.
+Tests, all deterministic and requiring no model:
 
-## Design constraints that shape the code
+```bash
+npm run test:core           # 62 tests
+npm run test:web            # 26 tests, Karma + headless Chrome
+npm run typecheck
+npm test                    # everything, including the legacy API
+```
 
-`chunks.embedding` is `vector(768)` because the embedding model emits 768 values. The
-width is asserted at boot against the actual column, not assumed.
+The eval needs a browser with WebGPU (it will not run in CI):
 
-Usable context is about 3200 tokens, so retrieval rather than long context is what makes
-a grounded answer possible. Chunks are packed to 320 tokens with a 60-token context
-prefix from the previous chunk, and six retrieved chunks fit in the prompt with room for
-the answer.
+```
+https://jouselt.github.io/ai-digital-twin-portfolio/?eval=1
+```
 
-`RETRIEVAL_MIN_SCORE` is 0.30 cosine similarity. Results below it never reach the model,
-and an empty result set produces an abstention instead of an empty prompt.
+## Repository layout
 
-`MAX_TOKENS_CAP` is 220. A caller asking for more is clamped.
+```
+libs/contracts      wire types and the SSE codec
+libs/twin-core      the whole answer path: retrieval, prompt, citations, guards, WebLLM ports
+apps/web            Angular 20 client, the product
+apps/api            NestJS 11 server variant (legacy path, kept green)
+corpus/projects     the nine records everything is retrieved from
+evals               golden set, scoring, recorded runs
+odd/tasks           the feature document this work was tracked in
+```
+
+`libs/twin-core` holds a single implementation of the answer path. `apps/api` is a thin
+adapter over it, not a second copy: two copies of a citation guard diverge within a
+week.
+
+## What this does not do
+
+- It does not answer from the model's general knowledge. Ask about a company that is not
+  in the corpus and it tells you so.
+- The 0.5B model writes citable prose roughly two thirds of the time. The fallback covers
+  the rest by quoting. That is the trade for a 290 MB download.
+- Refusal is evidence-driven, not topic-driven: personal questions are refused because
+  nothing in the record cites them, not because a list says so.

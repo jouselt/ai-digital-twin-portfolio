@@ -89,9 +89,25 @@ import { TwinService, type TwinMessage } from './twin.service';
               <ul class="sources">
                 @for (source of message.sources; track source.chunkId; let position = $index) {
                   <li>
-                    <span class="marker">[{{ position + 1 }}]</span>
-                    <span class="where">{{ source.title }} · {{ source.section }}</span>
-                    <span class="score">{{ source.score.toFixed(2) }}</span>
+                    <button
+                      type="button"
+                      class="source-toggle"
+                      [attr.aria-expanded]="openSource() === source.chunkId"
+                      (click)="toggleSource(source.chunkId)"
+                    >
+                      <span class="marker">[{{ position + 1 }}]</span>
+                      <span class="where">{{ source.title }} · {{ source.section }}</span>
+                      <span class="score">{{ source.score.toFixed(2) }}</span>
+                    </button>
+
+                    @if (openSource() === source.chunkId) {
+                      <div class="passage">
+                        <p class="passage-text">{{ source.content }}</p>
+                        <p class="passage-meta">
+                          {{ source.projectId }} · retrieves at {{ source.score.toFixed(2) }}
+                        </p>
+                      </div>
+                    }
                   </li>
                 }
               </ul>
@@ -343,14 +359,55 @@ import { TwinService, type TwinMessage } from './twin.service';
 
     .sources li {
       display: flex;
-      align-items: baseline;
-      gap: 0.5rem;
-      padding: 0.5rem 0.7rem;
+      flex-direction: column;
+      padding: 0;
+      border-radius: 10px;
       background: var(--surface-alt);
       border-radius: 10px;
       box-shadow: none;
       border: 1px solid rgba(216, 209, 193, 0.7);
       font-size: 0.84rem;
+    }
+
+    .source-toggle {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      width: 100%;
+      padding: 0.5rem 0.7rem;
+      background: transparent;
+      border: 0;
+      font: inherit;
+      color: inherit;
+      text-align: left;
+      cursor: pointer;
+      border-radius: 10px;
+    }
+
+    .source-toggle:hover,
+    .source-toggle:focus-visible {
+      background: rgba(28, 156, 135, 0.08);
+      outline: none;
+    }
+
+    .passage {
+      padding: 0 0.7rem 0.7rem;
+    }
+
+    .passage-text {
+      margin: 0;
+      padding: 0.6rem 0.7rem;
+      background: var(--surface-strong);
+      border-left: 3px solid var(--brand);
+      border-radius: 0 10px 10px 0;
+      color: var(--ink-soft);
+      line-height: 1.55;
+    }
+
+    .passage-meta {
+      margin: 0.4rem 0 0;
+      color: var(--muted);
+      font-size: 0.76rem;
     }
 
     .sources .marker {
@@ -485,10 +542,16 @@ import { TwinService, type TwinMessage } from './twin.service';
 export class ChatPane implements OnInit {
   readonly service = inject(TwinService);
   readonly question = signal('');
+  /** Which citation is expanded, by chunk id. Only one at a time. */
+  readonly openSource = signal<string | null>(null);
   readonly ready = computed(() => this.service.status() === 'ready');
 
   ngOnInit(): void {
     void this.service.init();
+  }
+
+  toggleSource(chunkId: string): void {
+    this.openSource.update((current) => (current === chunkId ? null : chunkId));
   }
 
   submit(): void {
