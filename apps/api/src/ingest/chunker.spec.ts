@@ -1,4 +1,4 @@
-import { estimateTokens } from '../chat/token-estimate';
+import { estimateTokens } from '@twin/core';
 import { CHUNK_TARGET_TOKENS, chunkDocument, splitSentences } from './chunker';
 import { normalizeDocument } from './normalize';
 

@@ -11,20 +11,37 @@ what the corpus does cover.
 
 ## Status
 
-Walking skeleton in progress. See `tasks.md`, Phase 0, for the slice being built and the
-gates that define it.
+The product direction changed on 2026-10-19: **the model runs in the visitor's browser**
+with WebLLM over WebGPU, not on a server. That removes the server from the answer path,
+so retrieval, generation, citation checking and abstention all happen client side, and the
+site can be served as static files.
+
+Measured before committing to it (HuggingFace API, 2026-10-19):
+
+| Model | Download |
+|---|---|
+| Qwen2.5-0.5B-Instruct-q4f16 | 290 MB |
+| Llama-3.2-1B-Instruct-q4f32 | 705 MB |
+| Qwen2.5-1.5B-Instruct-q4f16 | 880 MB |
+| snowflake-arctic-embed-s-q0f32 | 67 MB |
+
+The smallest viable pair is 357 MB, which is why the browser path ships with a static
+fallback: a visitor without WebGPU, or on a slow connection, must still get an answer
+instead of a progress bar.
 
 Built and green:
 
-- `libs/contracts`: wire types plus the SSE codec both apps share, so a frame shape
-  cannot drift between server and client (5 gate tests).
-- `apps/api` citation validator: parses `[n]` markers, drops ids that were never
-  retrieved, computes groundedness, treats an answer with no markers as ungrounded
-  (8 gate tests).
+- `libs/contracts`: wire types plus the SSE codec, so a frame shape cannot drift between
+  producer and consumer (5 gate tests).
+- `libs/twin-core`: the whole answer path with no framework import. Frame order, the
+  guard that keeps the refusal token out of the transcript, cosine retrieval with the
+  score floor, the citation gate and the three abstention reasons (29 gate tests).
+- `apps/api`: the server variant, kept while the browser path is built. Its chat service
+  is now a thin adapter over `@twin/core`, so the two cannot diverge (63 gate tests, 5
+  skipped without a database).
 
-Not built yet: embedding and LLM providers, ingest, retrieval, the streaming chat
-endpoint, the Angular pane, and deployment. `tasks.md` Phase 1 onward is the plan of
-record.
+Not built yet: the corpus bundle builder, the WebLLM generator, the Angular pane, evals,
+and deployment.
 
 ## Stack
 
@@ -34,14 +51,14 @@ Versions measured from the lockfile on 2026-10-19:
 |---|---|
 | Angular | 20.3.34 (zoneless, standalone) |
 | Angular CLI | 20.3.40 |
-| NestJS | 11.0.1 |
+| NestJS | 11.0.1 (server variant) |
 | Node | 22.22.3 |
 | npm | 10.9.8 |
-| Postgres (planned) | 16 with pgvector |
-| Embeddings (planned) | `nomic-embed-text` via local Ollama, 768 dimensions |
-| Generation (planned) | `mistral-nemo` via local Ollama |
+| Generation (browser) | WebLLM over WebGPU, model chosen at load |
+| Embeddings (browser) | `snowflake-arctic-embed-s` via WebLLM |
+| Postgres (server variant only) | 16 with pgvector |
 
-No cloud AI key is used anywhere. Inference runs against Ollama on the same host.
+No cloud AI key is used anywhere, and on the browser path no request leaves the machine.
 
 ## Layout
 

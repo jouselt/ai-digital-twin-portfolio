@@ -1,4 +1,4 @@
-import { estimateTokens } from '../chat/token-estimate';
+import { estimateTokens } from '@twin/core';
 
 /** Chunk budget in estimated tokens. See design.md, "Ingest". */
 export const CHUNK_TARGET_TOKENS = 320;
