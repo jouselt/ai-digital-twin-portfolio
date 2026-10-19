@@ -20,6 +20,7 @@
     "test": "npm run build:libs && npm run test:contracts && npm run test:core && npm run --workspace @twin/api test -- --passWithNoTests",
     "test:db": "DATABASE_URL=${DATABASE_URL:-postgres://twin:twindevlocal@127.0.0.1:55432/twin} npm run --workspace @twin/api test -- pg-chunk-store",
     "db:up": "docker compose up -d postgres",
-    "db:migrate": "for f in apps/api/migrations/*.sql; do docker compose exec -T postgres psql -U twin -d twin -v ON_ERROR_STOP=1 -q < \"$f\" || exit 1; done"
+    "db:migrate": "for f in apps/api/migrations/*.sql; do docker compose exec -T postgres psql -U twin -d twin -v ON_ERROR_STOP=1 -q < \"$f\" || exit 1; done",
+    "bundle": "npm run --workspace @twin/api bundle"
   }
 }
