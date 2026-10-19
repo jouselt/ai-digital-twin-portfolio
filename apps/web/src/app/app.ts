@@ -1,10 +1,12 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+
+import { EvalPage } from './eval/eval-page';
 
 import { ChatPane } from './twin/chat-pane';
 
 @Component({
   selector: 'app-root',
-  imports: [ChatPane],
+  imports: [ChatPane, EvalPage],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header class="site-header">
@@ -36,7 +38,11 @@ import { ChatPane } from './twin/chat-pane';
       </section>
 
       <section class="container pane-section">
-        <app-chat-pane />
+        @if (showEval) {
+          <app-eval-page />
+        } @else {
+          <app-chat-pane />
+        }
       </section>
     </main>
 
@@ -182,4 +188,8 @@ import { ChatPane } from './twin/chat-pane';
     }
   `,
 })
-export class App {}
+export class App {
+  /** `?eval=1` renders the eval report instead of the portfolio chat. */
+  readonly showEval =
+    typeof location !== 'undefined' && new URLSearchParams(location.search).has('eval');
+}
