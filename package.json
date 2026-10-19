@@ -14,6 +14,9 @@
     "build:contracts": "npm run --workspace @twin/contracts build",
     "test:contracts": "npm run --workspace @twin/contracts test",
     "typecheck": "npm run build:contracts && tsc -p apps/api/tsconfig.json --noEmit && tsc -p apps/web/tsconfig.app.json --noEmit",
-    "test": "npm run test:contracts && npm run --workspace @twin/api test -- --passWithNoTests"
+    "test": "npm run test:contracts && npm run --workspace @twin/api test -- --passWithNoTests",
+    "test:db": "DATABASE_URL=${DATABASE_URL:-postgres://twin:twindevlocal@127.0.0.1:55432/twin} npm run --workspace @twin/api test -- pg-chunk-store",
+    "db:up": "docker compose up -d postgres",
+    "db:migrate": "for f in apps/api/migrations/*.sql; do docker compose exec -T postgres psql -U twin -d twin -v ON_ERROR_STOP=1 -q < \"$f\" || exit 1; done"
   }
 }

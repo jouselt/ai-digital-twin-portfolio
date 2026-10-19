@@ -1,0 +1,23 @@
+services:
+  postgres:
+    # Postgres 16 with pgvector, matching the version the NixOS module will use.
+    image: pgvector/pgvector:pg16
+    container_name: twin-postgres
+    environment:
+      POSTGRES_USER: twin
+      POSTGRES_PASSWORD: twindevlocal
+      POSTGRES_DB: twin
+    ports:
+      # Deliberately not 5432: this database is disposable and must never be
+      # mistaken for the homelab one.
+      - '55432:5432'
+    volumes:
+      - twin_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U twin -d twin']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  twin_pgdata:

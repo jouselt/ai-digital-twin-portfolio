@@ -46,22 +46,30 @@ No cloud AI key is used anywhere. Inference runs against Ollama on the same host
 ## Layout
 
 ```
-apps/web        Angular application
-apps/api        NestJS application
-libs/contracts  wire types and the SSE codec, no framework imports
-infra/nixos     NixOS module (planned)
-infra/sql       migrations (planned)
-corpus/projects source documents that become chunks (planned)
+apps/web              Angular application
+apps/api              NestJS application
+apps/api/migrations   SQL migrations, idempotent, applied with psql
+libs/contracts        wire types and the SSE codec, no framework imports
+infra/nixos           NixOS module (planned)
+corpus/projects       source documents that become chunks (planned)
 ```
 
 ## Commands
 
 ```bash
 npm install
-npm run typecheck        # contracts build + tsc over api and web
+npm run typecheck         # contracts build + tsc over api, web and test files
 npm run test:contracts    # contract gate tests
 npm run --workspace @twin/api test
+
+# local database: Postgres 16 + pgvector in Docker, never on 5432
+npm run db:up             # docker compose up -d postgres
+npm run db:migrate        # applies apps/api/migrations/*.sql, safe to re-run
+npm run test:db           # the real-database suite against that container
 ```
+
+The database suite is skipped, not failed, when `DATABASE_URL` is unset, so the default
+test run needs no services.
 
 ## Design constraints that shape the code
 
