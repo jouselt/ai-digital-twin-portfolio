@@ -59,10 +59,16 @@ export const GOLDEN_SET: readonly EvalCase[] = [
     why: 'Narrow technical question on one project.',
   },
   {
-    id: 'uncovered-autodesk',
+    id: 'covered-autodesk',
     question: 'What did he ship for autodesk?',
+    expect: 'cited',
+    why: 'Autodesk is a real client in the CV. Refusing it was a corpus gap, not a feature.',
+  },
+  {
+    id: 'uncovered-spotify',
+    question: 'What did he build at Spotify?',
     expect: 'uncovered',
-    why: 'The question that produced six irrelevant passages at 0.71.',
+    why: 'A company with no record anywhere in the portfolio.',
   },
   {
     id: 'uncovered-google',
