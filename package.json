@@ -17,10 +17,11 @@
     "test:contracts": "npm run --workspace @twin/contracts test",
     "test:core": "npm run --workspace @twin/core test",
     "typecheck": "npm run build:libs && tsc -p apps/api/tsconfig.json --noEmit && tsc -p apps/web/tsconfig.app.json --noEmit",
-    "test": "npm run build:libs && npm run test:contracts && npm run test:core && npm run --workspace @twin/api test -- --passWithNoTests",
+    "test": "npm run build:libs && npm run test:contracts && npm run test:core && npm run --workspace @twin/api test -- --passWithNoTests && npm run test:web",
     "test:db": "DATABASE_URL=${DATABASE_URL:-postgres://twin:twindevlocal@127.0.0.1:55432/twin} npm run --workspace @twin/api test -- pg-chunk-store",
     "db:up": "docker compose up -d postgres",
     "db:migrate": "for f in apps/api/migrations/*.sql; do docker compose exec -T postgres psql -U twin -d twin -v ON_ERROR_STOP=1 -q < \"$f\" || exit 1; done",
-    "bundle": "npm run --workspace @twin/api bundle"
+    "bundle": "npm run --workspace @twin/api bundle",
+    "test:web": "CHROME_BIN=${CHROME_BIN:-/run/current-system/sw/bin/google-chrome} npm run --workspace @twin/web test -- --watch=false --browsers=ChromeHeadless"
   }
 }

@@ -38,3 +38,10 @@ export {
   type MlcChatRequest,
   type MlcEngineLike,
 } from './webllm';
+export {
+  BundleError,
+  parseBundle,
+  type BundleChunk,
+  type BundleProject,
+  type CorpusBundleLike,
+} from './bundle';

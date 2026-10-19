@@ -8,10 +8,14 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/index.js",
       "default": "./dist/index.js"
     },
     "./sse": {
       "types": "./dist/sse.d.ts",
+      "import": "./dist/esm/sse.js",
+      "require": "./dist/sse.js",
       "default": "./dist/sse.js"
     }
   },
@@ -19,7 +23,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.esm.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test \"dist/**/*.test.js\""
   }
