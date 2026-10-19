@@ -27,6 +27,8 @@ export interface TwinTerminal {
   readonly grounded?: number;
   readonly reason?: string;
   readonly suggestions?: readonly string[];
+  /** The underlying failure, shown verbatim so it can be reported instead of guessed. */
+  readonly detail?: string;
 }
 
 export interface TwinMessage {
@@ -177,7 +179,7 @@ export class TwinService {
       const message = caught instanceof Error ? caught.message : 'the answer could not be produced';
       this.error.set(message);
       this.patch(answerIndex, (entry) => {
-        entry.terminal = { kind: 'abstain', reason: 'request_failed' };
+        entry.terminal = { kind: 'abstain', reason: 'request_failed', detail: message };
       });
     } finally {
       this.busy.set(false);

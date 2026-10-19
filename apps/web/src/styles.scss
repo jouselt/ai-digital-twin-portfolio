@@ -1,1 +1,140 @@
-/* You can add global styles to this file, and also import other style files */
+/*
+ * Design tokens copied from the deployed portfolio (jouselt.github.io/portfolio,
+ * assets/css/main.css) so the twin reads as part of the same site rather than a
+ * separate app that happens to link to it.
+ *
+ * Values are verbatim, not approximated: --bg #f5f2e8, --brand #1c9c87,
+ * --radius 18px, --max-width 1160px, Inter.
+ */
+:root {
+  --bg: #f5f2e8;
+  --surface: #fffdf8;
+  --surface-strong: #ffffff;
+  --surface-alt: #f0ece2;
+  --text: #24303a;
+  --muted: #5f6b76;
+  --line: #d8d1c1;
+  --brand: #1c9c87;
+  --brand-deep: #127261;
+  --accent: #ef7b84;
+  --ink-soft: #43485f;
+  --shadow: 0 18px 40px rgba(36, 48, 58, 0.08);
+  --radius: 18px;
+  --max-width: 1160px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.6;
+}
+
+a {
+  color: var(--brand-deep);
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.18em;
+}
+
+a:hover,
+a:focus-visible {
+  color: var(--brand);
+}
+
+.container {
+  width: min(calc(100% - 2rem), var(--max-width));
+  margin: 0 auto;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brand-deep);
+}
+
+.card {
+  background: var(--surface-strong);
+  border: 1px solid rgba(216, 209, 193, 0.9);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.25rem;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  background: rgba(28, 156, 135, 0.12);
+  color: var(--brand-deep);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3rem;
+  padding: 0.8rem 1.2rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 1rem;
+  font-family: inherit;
+  text-decoration: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.button-primary {
+  background: var(--brand);
+  color: #fff;
+}
+
+.button-primary:hover:not(:disabled),
+.button-primary:focus-visible:not(:disabled) {
+  background: var(--brand-deep);
+  color: #fff;
+}
+
+.button-secondary {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--text);
+}
+
+.button-secondary:hover:not(:disabled) {
+  border-color: var(--brand);
+  color: var(--brand-deep);
+}
+
+.button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
