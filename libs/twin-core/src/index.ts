@@ -27,3 +27,14 @@ export {
   type CapabilityReason,
   type GpuLike,
 } from './capabilities';
+export {
+  EMBEDDING_MODEL_ID,
+  loadWebLlmEngine,
+  MODEL_CHOICES,
+  WebLlmEmbedder,
+  WebLlmGenerator,
+  type LoadProgress,
+  type MlcChatChunk,
+  type MlcChatRequest,
+  type MlcEngineLike,
+} from './webllm';
