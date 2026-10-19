@@ -40,3 +40,7 @@ neither.
 
 `results/` holds one file per measurement, with the device, the date, the model and the
 caveat that applies. Numbers without a caveat are marketing.
+
+Both recorded files predate the Autodesk record: they cover 14 of the current 15 cases,
+and the Autodesk question was an expected refusal then and an expected answer now. A
+fresh run is needed before either number is quoted against the current corpus.
