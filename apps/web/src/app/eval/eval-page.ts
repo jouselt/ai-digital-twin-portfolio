@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 
+import { MODEL_CHOICES } from '@twin/core';
+
 import { TwinService } from '../twin/twin.service';
 
 import { summarize, scoreCase, type CaseResult, type EvalSummary } from './eval-runner';
@@ -19,6 +21,12 @@ import { GOLDEN_SET } from './golden-set';
     <section class="eval">
       <p class="eyebrow">Eval run</p>
       <h1>{{ GOLDEN_SET.length }} cases, real model, real corpus</h1>
+      <p class="hint">
+        Measured model: <strong>{{ service.modelId() }}</strong>
+        @if (requestedModel !== '') {
+          <span> (from the URL)</span>
+        }
+      </p>
       <p class="lead">
         Each case asks whether the visitor got the behaviour the product promises: a cited
         answer, a refusal that names the missing record, a canned intro, or an honest
@@ -230,6 +238,9 @@ export class EvalPage implements OnInit {
   readonly done = signal(0);
   readonly copied = signal(false);
   readonly broken = signal(0);
+  /** `?model=` selects which chat model is measured; empty means the default. */
+  readonly requestedModel =
+    typeof location === 'undefined' ? '' : (new URLSearchParams(location.search).get('model') ?? '');
 
   ngOnInit(): void {
     void this.run();
@@ -242,6 +253,17 @@ export class EvalPage implements OnInit {
     this.summary.set(null);
 
     await this.service.init();
+
+    // Choosing before the corpus loads costs nothing: the vectors belong to the
+    // embedding model, which does not change with the chat model.
+    const choice = MODEL_CHOICES.find((candidate) => {
+      const wanted = this.requestedModel.toLowerCase();
+      if (wanted === '') return false;
+      return candidate.id.toLowerCase().includes(wanted) || candidate.label.toLowerCase() === wanted;
+    });
+    if (choice !== undefined && choice.id !== this.service.modelId()) {
+      this.service.chooseModel(choice.id);
+    }
 
     const collected: CaseResult[] = [];
     for (const testCase of GOLDEN_SET) {

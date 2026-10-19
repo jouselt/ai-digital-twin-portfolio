@@ -1,0 +1,35 @@
+{
+  "measured": "2026-10-19",
+  "device": "iPad, Safari, WebGPU",
+  "url": "https://jouselt.github.io/ai-digital-twin-portfolio/?eval=1",
+  "model": "Qwen2.5-0.5B-Instruct-q4f16_1-MLC",
+  "model_label": "Fast (290 MB)",
+  "summary": {
+    "total": 14,
+    "passed": 14,
+    "rate": 1,
+    "byExpectation": [
+      { "expect": "cited", "passed": 6, "total": 6 },
+      { "expect": "uncovered", "passed": 3, "total": 3 },
+      { "expect": "canned", "passed": 2, "total": 2 },
+      { "expect": "abstain", "passed": 3, "total": 3 }
+    ]
+  },
+  "note": "Two covered cases were answered by the extractive fallback (kind 'quote') because the 0.5B model produced markers with no prose. The claim this run supports is that the product always returns evidence, not that the small model always writes. Generated prose: 4 of 6.",
+  "raw": [
+    { "id": "covered-observability", "got": "quote", "chars": 126 },
+    { "id": "covered-carnival", "got": "done", "chars": 101 },
+    { "id": "covered-bff", "got": "done", "chars": 101 },
+    { "id": "covered-performance", "got": "done", "chars": 98 },
+    { "id": "covered-stack", "got": "done", "chars": 98 },
+    { "id": "covered-websocket", "got": "quote", "chars": 119 },
+    { "id": "uncovered-autodesk", "got": "abstain:uncovered_entity" },
+    { "id": "uncovered-google", "got": "abstain:uncovered_entity" },
+    { "id": "uncovered-netflix", "got": "abstain:uncovered_entity" },
+    { "id": "canned-greeting", "got": "canned" },
+    { "id": "canned-meta", "got": "canned" },
+    { "id": "abstain-salary", "got": "abstain:no_citations" },
+    { "id": "abstain-politics", "got": "abstain:no_citations" },
+    { "id": "abstain-future", "got": "abstain:uncovered_entity" }
+  ]
+}
