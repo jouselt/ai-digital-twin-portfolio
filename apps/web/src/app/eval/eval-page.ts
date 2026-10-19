@@ -26,7 +26,29 @@ import { GOLDEN_SET } from './golden-set';
       </p>
 
       @if (running()) {
-        <p class="status">Running {{ done() }} of {{ GOLDEN_SET.length }}…</p>
+        <div class="progress-block">
+          <p class="status">Running {{ done() }} of {{ GOLDEN_SET.length }}…</p>
+
+          @if (service.status() === 'probing') {
+            <p class="hint">Checking what this browser can run.</p>
+          }
+
+          @if (service.status() === 'loading') {
+            <progress [value]="service.progress()" max="1"></progress>
+            <p class="hint">
+              {{ service.progressText() }} — the first run downloads about 357 MB of model, once.
+              The questions start as soon as it finishes.
+            </p>
+          }
+
+          @if (service.status() === 'fallback') {
+            <p class="hint broken">{{ service.capability()?.message }}</p>
+          }
+
+          @if (service.status() === 'error') {
+            <p class="hint broken">{{ service.error() }}</p>
+          }
+        </div>
       }
 
       @if (broken()) {
@@ -94,6 +116,24 @@ import { GOLDEN_SET } from './golden-set';
       margin: 0;
       max-width: 52rem;
       color: var(--ink-soft);
+    }
+
+    .progress-block {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    progress {
+      width: 100%;
+      height: 0.5rem;
+      accent-color: var(--brand);
+    }
+
+    .hint {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
     }
 
     .status {
