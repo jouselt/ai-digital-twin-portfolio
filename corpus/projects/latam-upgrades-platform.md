@@ -9,7 +9,7 @@ stack: [Angular, TypeScript, state management]
 
 ## Context
 
-An internal team needed to track passenger upgrade eligibility. The work started with a
+LATAM Airlines needed an internal tool to track passenger upgrade eligibility. The work started with a
 process that lived in spreadsheets and conversations, and the mandate was a working
 application, not a prototype: concept to production in **four months**.
 

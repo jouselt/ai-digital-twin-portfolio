@@ -49,3 +49,9 @@ export {
 export { cannedIntro, classifyIntent, type QuestionIntent } from './intent';
 export { hasProse } from './orchestrator';
 export { uncoveredEntities } from './coverage';
+export {
+  checkStarters,
+  STARTER_QUESTIONS,
+  type Starter,
+  type StarterProblem,
+} from './starters';

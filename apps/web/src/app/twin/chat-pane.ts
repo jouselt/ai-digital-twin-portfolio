@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
+import { STARTER_QUESTIONS } from '@twin/core';
+
 import { StatusPanel } from './status-panel';
 import { TwinService, type TwinMessage } from './twin.service';
 
@@ -21,6 +23,17 @@ import { TwinService, type TwinMessage } from './twin.service';
       </header>
 
       @if (service.projects().length > 0 && service.status() !== 'fallback') {
+        <div class="starters">
+          <p class="starters-label">A recruiter with thirty seconds usually asks one of these:</p>
+          <div class="starter-row">
+            @for (starter of starters; track starter.question) {
+              <button type="button" class="starter" (click)="askStarter(starter.question)" [disabled]="service.busy()">
+                {{ starter.question }}
+              </button>
+            }
+          </div>
+        </div>
+
         <ul class="corpus">
           @for (project of service.projects(); track project.id) {
             <li class="corpus-card">
@@ -145,7 +158,11 @@ import { TwinService, type TwinMessage } from './twin.service';
                 @if (message.terminal?.suggestions?.length) {
                   <ul>
                     @for (suggestion of message.terminal?.suggestions; track suggestion) {
-                      <li>{{ suggestion }}</li>
+                      <li>
+                        <button type="button" class="suggestion" (click)="askStarter('Tell me about ' + suggestion)" [disabled]="service.busy()">
+                          {{ suggestion }}
+                        </button>
+                      </li>
                     }
                   </ul>
                 }
@@ -202,6 +219,46 @@ import { TwinService, type TwinMessage } from './twin.service';
     .hint {
       margin: 0;
       color: var(--ink-soft);
+    }
+
+    .starters {
+      margin: 0 0 1.25rem;
+    }
+
+    .starters-label {
+      margin: 0 0 0.6rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .starter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .starter,
+    .suggestion {
+      padding: 0.5rem 0.85rem;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--surface-strong);
+      color: var(--text);
+      font: inherit;
+      font-size: 0.9rem;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .starter:hover:not(:disabled),
+    .suggestion:hover:not(:disabled) {
+      border-color: var(--brand-deep);
+      color: var(--brand-deep);
+    }
+
+    .suggestion {
+      padding: 0.25rem 0.7rem;
+      font-size: 0.85rem;
     }
 
     .corpus {
@@ -582,6 +639,14 @@ export class ChatPane implements OnInit {
 
   toggleSource(chunkId: string): void {
     this.openSource.update((current) => (current === chunkId ? null : chunkId));
+  }
+
+  /** Hand-written and proven answerable against the shipped corpus by twin-core's tests. */
+  readonly starters = STARTER_QUESTIONS;
+
+  askStarter(question: string): void {
+    this.question.set('');
+    void this.service.ask(question);
   }
 
   submit(): void {

@@ -9,7 +9,7 @@ stack: [WebSockets, Angular, TypeScript, PCI]
 
 ## Context
 
-Payments on board happen at a POS terminal, but the flow starts in a web application. The
+Built for Carnival Cruise Line, where payments on board happen at a POS terminal while the flow starts in a web application. The
 web app and the terminal are separate worlds: the browser cannot talk to the device
 directly, and the device fleet is mixed, with new Ingenico terminals alongside legacy
 Verifone units that had to keep working.

@@ -197,3 +197,45 @@ describe('ChatPane accessibility', () => {
     expect(live.textContent).toContain('Commerce APIs [1].');
   });
 });
+
+describe('ChatPane starters', () => {
+  let service: TwinService;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [ChatPane],
+      providers: [provideZonelessChangeDetection()],
+    }).compileComponents();
+    service = TestBed.inject(TwinService);
+    service.useEnvironment(environment() as Parameters<TwinService['useEnvironment']>[0]);
+    await service.init();
+  });
+
+  it('offers a stranger something to click before they ask anything', () => {
+    const fixture = TestBed.createComponent(ChatPane);
+    fixture.detectChanges();
+
+    const buttons = fixture.nativeElement.querySelectorAll('.starter') as NodeListOf<HTMLButtonElement>;
+    expect(buttons.length).toBeGreaterThanOrEqual(3);
+    expect(buttons[0]?.textContent).toContain('?');
+    // They are buttons, not links or list items, so a keyboard reaches them.
+    expect(buttons[0]?.tagName).toBe('BUTTON');
+  });
+
+  it('asks the exact question it showed', () => {
+    const fixture = TestBed.createComponent(ChatPane);
+    fixture.detectChanges();
+
+    const asked: string[] = [];
+    spyOn(service, 'ask').and.callFake((question: string) => {
+      asked.push(question);
+      return Promise.resolve();
+    });
+
+    const first = fixture.nativeElement.querySelector('.starter') as HTMLButtonElement;
+    const label = (first.textContent ?? '').trim();
+    first.click();
+
+    expect(asked).toEqual([label]);
+  });
+});

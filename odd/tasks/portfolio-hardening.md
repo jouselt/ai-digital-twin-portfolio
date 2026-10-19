@@ -47,6 +47,9 @@ list. Refusal stays evidence-driven.
   first answer, not on accuracy: the 3-run measurement of the 1.5B is 42/42 and it
   writes 17 of 18 covered answers itself.
 - T4 Telemetry panel and first-token timing. Covers S3. Status: done. 3 Karma tests.
+- T6 Starter questions and clickable follow-ups. Covers S2 and S5. Status: done. Four
+  hand-written starters, each validated against the shipped bundle by a test in
+  twin-core (reads the real `bundle.json`, not a fixture). 4 core tests, 2 Karma tests.
 - T5 Accessibility pass. Covers S4. Status: done. Contrast measured, not eyeballed:
   white on --brand was 3.41:1, so the primary button moved to --brand-deep (5.82:1).
   2 Karma tests, one of which holds an answer mid-stream and asserts the live region
@@ -75,3 +78,10 @@ L5: the 1.5B measured 42/42 over three runs, minutes after the same model scored
 than deleted: the variance is the most useful thing the eval produced, and hiding it
 would make every other number in the table look more solid than it is. The README now
 carries the run count on every row.
+
+L6: while validating the starters, the corpus check found that two records named their
+client only in frontmatter: the Carnival record never said Carnival in its body, so a
+question naming the client was answered from a passage that did not contain the name. Both
+records now name the client in the first sentence of Context. The bundle hash changed with
+it. Same session, the full `npm test` found four red API specs that had been failing since
+the abstention reasons were split, because only the touched workspace had been run.

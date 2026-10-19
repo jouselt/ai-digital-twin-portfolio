@@ -88,7 +88,7 @@ describe('ChatService frame ordering', () => {
   });
 
   it('reports grounded 1 and an estimated token count when every marker resolves', async () => {
-    const frames = await collect(serviceWith(new FakeLlmProvider(['Shipped it [1][2].'])));
+    const frames = await collect(serviceWith(new FakeLlmProvider(['Shipped the payments bridge [1][2].'])));
 
     const done = frames.at(-1);
     expect(done).toMatchObject({ type: 'done', grounded: 1 });
@@ -130,19 +130,26 @@ describe('ChatService abstention', () => {
     const frames = await collect(serviceWith(new FakeLlmProvider(['Made this up [9].'])));
 
     expect(textOf(frames)).toBe('Made this up [9].');
-    expect(frames.at(-1)).toMatchObject({ type: 'abstain', reason: 'ungrounded_citations' });
+    expect(frames.at(-1)).toMatchObject({ type: 'abstain', reason: 'unknown_citations' });
   });
 
   it('abstains when only some markers resolve', async () => {
     const frames = await collect(serviceWith(new FakeLlmProvider(['Real [1] and invented [7].'])));
 
-    expect(frames.at(-1)).toMatchObject({ type: 'abstain', reason: 'ungrounded_citations' });
+    expect(frames.at(-1)).toMatchObject({ type: 'abstain', reason: 'unknown_citations' });
   });
 
   it('abstains when the model answers without citing anything', async () => {
     const frames = await collect(serviceWith(new FakeLlmProvider(['He did a lot of good work.'])));
 
-    expect(frames.at(-1)).toMatchObject({ type: 'abstain', reason: 'ungrounded_citations' });
+    // Its own reason: citing nothing is a different defect from citing a ghost.
+    expect(frames.at(-1)).toMatchObject({ type: 'abstain', reason: 'no_citations' });
+  });
+
+  it('abstains when the answer is markers with no sentence around them', async () => {
+    const frames = await collect(serviceWith(new FakeLlmProvider(['[1][2]'])));
+
+    expect(frames.at(-1)).toMatchObject({ type: 'abstain', reason: 'no_prose' });
   });
 
   it('offers three real topics with every abstention, so the visitor has somewhere to go', async () => {
