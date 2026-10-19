@@ -41,9 +41,12 @@ list. Refusal stays evidence-driven.
   typecheck were run locally for this commit.
 - T2 Clickable citations. Covers S2. Status: done. 3 Karma tests, including one that
   compares the shown passage to the retrieved content verbatim.
-- T3 Third model option and the recorded rows. Covers S5. Status: option done,
-  rows pending on runs from a device with WebGPU. Qwen2.5-3B verified present in the
-  WebLLM model list, not assumed from its download size.
+- T3 Third model option and the recorded rows. Covers S5. Status: done. Two rows
+  recorded (`fast-qwen-0.5b.json` 14/14, `better-qwen-1.5b.json` 11/14); the 3B is
+  offered but unmeasured and the README says so. Default stays Fast because it
+  measured better, which inverts the expected answer: the 1.5B declines on three
+  covered questions. Recorded in `odd/` rather than the README alone because the
+  reasoning matters more than the number.
 - T4 Telemetry panel and first-token timing. Covers S3. Status: done. 3 Karma tests.
 - T5 Accessibility pass. Covers S4. Status: done. Contrast measured, not eyeballed:
   white on --brand was 3.41:1, so the primary button moved to --brand-deep (5.82:1).
@@ -62,3 +65,8 @@ L3: contrast was computed for every text pair in the palette. Two failures found
 white on #1c9c87 at 3.41:1 (the primary button) and --accent at 2.68:1 on white,
 which is only used for decorative borders and bullet glyphs, so it stays. The
 button now uses the darker green already present in the portfolio palette.
+
+L4: the second row inverted the assumption. The 1.5B passed 11/14 against the 0.5B's
+14/14, declining three covered questions with model_declined and writing answers half
+the length. Left in the table as found. The eval now accepts ?runs=N, because two
+single runs at temperature 0.2 are anecdotes, not a measurement.

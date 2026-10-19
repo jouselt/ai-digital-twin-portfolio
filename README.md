@@ -62,15 +62,24 @@ The evals ask whether the visitor got the promised behaviour: a cited answer, a 
 that names the missing record, a canned intro, or an honest abstention. Fourteen cases,
 run in a real browser against the real model.
 
-| Model | Download | Cases passed | Generated prose |
+| Model | Download | Cases passed | Covered questions answered |
 |---|---|---|---|
-| Qwen2.5-0.5B (Fast) | 290 MB | 14/14 | 4 of 6 covered |
+| Qwen2.5-0.5B (Fast, default) | 290 MB | 14/14 | 6 of 6 (4 generated, 2 quoted) |
+| Qwen2.5-1.5B (Better) | 880 MB | 11/14 | 3 of 6 |
+| Qwen2.5-3B (Best) | 1748 MB | not measured | — |
 
-Raw runs live in `evals/results/`. The caveat is written into each file: with the 0.5B,
-two covered questions were answered by the extractive fallback, so what the run supports
-is that the product always returns evidence, not that the small model always writes.
+**The bigger model scored lower, and that is the interesting result.** The 1.5B refused
+three covered questions by emitting the refusal token, where the 0.5B answered them. Its
+answers were also about half as long. Being more cautious is not being more correct: on a
+nine-document corpus the larger model reads the retrieval as insufficient evidence and
+declines. Fast is the default because it measured better, not because it is smaller.
 
-The model is selectable in the page. `?model=better` measures the 1.5B.
+Raw runs live in `evals/results/`, with the caveat written into each file. Two apply:
+each row is a single run at temperature 0.2, so one run is an anecdote rather than a
+measurement, and `?runs=3` exists to measure the variance. And what the 14/14 supports is
+that the product always returns evidence, not that the small model always writes.
+
+The model is selectable in the page: `?model=better`, and `?runs=2` to repeat the set.
 
 ## Cost of all this, in bytes
 

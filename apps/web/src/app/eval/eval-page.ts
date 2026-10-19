@@ -35,7 +35,7 @@ import { GOLDEN_SET } from './golden-set';
 
       @if (running()) {
         <div class="progress-block">
-          <p class="status">Running {{ done() }} of {{ GOLDEN_SET.length }}…</p>
+          <p class="status">Running {{ done() }} of {{ planned() }}…</p>
 
           @if (service.status() === 'probing') {
             <p class="hint">Checking what this browser can run.</p>
@@ -236,8 +236,16 @@ export class EvalPage implements OnInit {
   readonly summary = signal<EvalSummary | null>(null);
   readonly running = signal(false);
   readonly done = signal(0);
+  readonly planned = signal(GOLDEN_SET.length);
   readonly copied = signal(false);
   readonly broken = signal(0);
+  /** `?runs=` repeats the whole set; one run at temperature 0.2 is an anecdote. */
+  readonly runs = (() => {
+    if (typeof location === 'undefined') return 1;
+    const raw = Number.parseInt(new URLSearchParams(location.search).get('runs') ?? '1', 10);
+    return Number.isFinite(raw) && raw > 0 ? Math.min(raw, 5) : 1;
+  })();
+
   /** `?model=` selects which chat model is measured; empty means the default. */
   readonly requestedModel =
     typeof location === 'undefined' ? '' : (new URLSearchParams(location.search).get('model') ?? '');
@@ -266,12 +274,16 @@ export class EvalPage implements OnInit {
     }
 
     const collected: CaseResult[] = [];
-    for (const testCase of GOLDEN_SET) {
-      await this.service.ask(testCase.question);
-      const answer = this.service.messages().at(-1);
-      collected.push(scoreCase(testCase, answer));
-      this.results.set([...collected]);
-      this.done.set(collected.length);
+    const total = GOLDEN_SET.length * this.runs;
+    for (let run = 0; run < this.runs; run += 1) {
+      for (const testCase of GOLDEN_SET) {
+        await this.service.ask(testCase.question);
+        const answer = this.service.messages().at(-1);
+        collected.push(scoreCase(testCase, answer));
+        this.results.set([...collected]);
+        this.done.set(collected.length);
+        this.planned.set(total);
+      }
     }
 
     this.summary.set(summarize(collected));
@@ -280,6 +292,7 @@ export class EvalPage implements OnInit {
     (globalThis as { __TWIN_EVAL__?: unknown }).__TWIN_EVAL__ = {
       summary: this.summary(),
       results: collected,
+      runs: this.runs,
       model: this.service.modelId(),
       adapter: this.service.capability()?.adapter,
     };

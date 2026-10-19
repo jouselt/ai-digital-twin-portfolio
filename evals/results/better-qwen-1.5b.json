@@ -1,0 +1,37 @@
+{
+  "measured": "2026-10-19",
+  "device": "iPad, Safari, WebGPU",
+  "url": "https://jouselt.github.io/ai-digital-twin-portfolio/?eval=1&model=better",
+  "model": "Qwen2.5-1.5B-Instruct-q4f16_1-MLC",
+  "model_label": "Better (880 MB)",
+  "summary": {
+    "total": 14,
+    "passed": 11,
+    "rate": 0.7857142857142857,
+    "byExpectation": [
+      { "expect": "cited", "passed": 3, "total": 6 },
+      { "expect": "uncovered", "passed": 3, "total": 3 },
+      { "expect": "canned", "passed": 2, "total": 2 },
+      { "expect": "abstain", "passed": 3, "total": 3 }
+    ]
+  },
+  "finding": "The larger model scored lower. It refused three covered questions by emitting the refusal token, where the 0.5B answered them. Its answers were also about half as long (45 to 54 characters against 98 to 126). Being more cautious is not being more correct: on this corpus the 1.5B reads the retrieval as insufficient evidence and declines.",
+  "also_notable": "The two personal questions were refused by model_declined rather than no_citations, which is a better mechanism than the one the small model used: the model itself judged the record did not contain an answer.",
+  "caveat": "One run per model, at temperature 0.2, so a single run is an anecdote and not a measurement. A default should be chosen after k repeats; the eval accepts ?runs=N for that.",
+  "raw": [
+    { "id": "covered-observability", "got": "abstain:model_declined", "chars": 0 },
+    { "id": "covered-carnival", "got": "abstain:model_declined", "chars": 0 },
+    { "id": "covered-bff", "got": "done", "chars": 45 },
+    { "id": "covered-performance", "got": "done", "chars": 54 },
+    { "id": "covered-stack", "got": "abstain:model_declined", "chars": 0 },
+    { "id": "covered-websocket", "got": "done", "chars": 50 },
+    { "id": "uncovered-autodesk", "got": "abstain:uncovered_entity" },
+    { "id": "uncovered-google", "got": "abstain:uncovered_entity" },
+    { "id": "uncovered-netflix", "got": "abstain:uncovered_entity" },
+    { "id": "canned-greeting", "got": "canned" },
+    { "id": "canned-meta", "got": "canned" },
+    { "id": "abstain-salary", "got": "abstain:model_declined" },
+    { "id": "abstain-politics", "got": "abstain:model_declined" },
+    { "id": "abstain-future", "got": "abstain:uncovered_entity" }
+  ]
+}
