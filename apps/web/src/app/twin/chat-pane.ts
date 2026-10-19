@@ -490,6 +490,10 @@ export class ChatPane implements OnInit {
     switch (message.terminal?.reason) {
       case 'model_declined':
         return 'The model declined to answer.';
+      case 'no_citations':
+        return 'That answer cited nothing, so it could not be verified.';
+      case 'unknown_citations':
+        return 'That answer cited a passage that does not exist.';
       case 'ungrounded_citations':
         return 'That answer could not be grounded, so it was discarded.';
       case 'request_failed':
@@ -503,6 +507,10 @@ export class ChatPane implements OnInit {
     switch (message.terminal?.reason) {
       case 'model_declined':
         return 'The passages retrieved do not actually answer the question.';
+      case 'no_citations':
+        return 'The model wrote an answer without markers, so there was no evidence to check it against.';
+      case 'unknown_citations':
+        return 'The answer cited a passage that was never retrieved, which is how a guess looks.';
       case 'ungrounded_citations':
         return 'The answer cited a passage that was never retrieved, which is how a guess looks.';
       case 'request_failed':

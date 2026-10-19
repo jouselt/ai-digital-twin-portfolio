@@ -169,3 +169,39 @@ describe('TwinService with a model it can run', () => {
     expect(answer?.terminal?.reason).toBe('model_declined');
   });
 });
+
+describe('TwinService small talk', () => {
+  let service: TwinService;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection()],
+    }).compileComponents();
+    service = TestBed.inject(TwinService);
+  });
+
+  it('answers a greeting without loading a model or refusing', async () => {
+    const { environment, recorder } = environmentWithModelSupport();
+    service.useEnvironment(environment);
+    await service.init();
+
+    await service.ask('Hi');
+
+    const answer = service.messages().at(-1);
+    expect(answer?.text).toContain('every answer cites');
+    expect(answer?.terminal).toBeNull();
+    // The whole point: no download, no retrieval, no refusal on the first keystroke.
+    expect(recorder.loads.length).toBe(0);
+  });
+
+  it('still sends a greeting followed by a real question to the corpus', async () => {
+    const { environment, recorder } = environmentWithModelSupport();
+    service.useEnvironment(environment);
+    await service.init();
+
+    await service.ask('Hi, how did he handle observability?');
+
+    expect(recorder.loads.length).toBe(2);
+    expect(service.messages().at(-1)?.terminal?.kind).toBe('done');
+  });
+});

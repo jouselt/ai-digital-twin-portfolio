@@ -45,3 +45,5 @@ export {
   type BundleProject,
   type CorpusBundleLike,
 } from './bundle';
+
+export { cannedIntro, classifyIntent, type QuestionIntent } from './intent';

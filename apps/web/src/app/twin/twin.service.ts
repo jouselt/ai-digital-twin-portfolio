@@ -2,6 +2,8 @@ import { computed, Injectable, signal } from '@angular/core';
 import type { AskRequest, ChatEvent, SourceRef } from '@twin/contracts';
 import {
   ask as runTwin,
+  cannedIntro,
+  classifyIntent,
   EMBEDDING_MODEL_ID,
   MODEL_CHOICES,
   parseBundle,
@@ -152,6 +154,17 @@ export class TwinService {
       { role: 'user', text: trimmed, sources: [], terminal: null, traceId: null },
       { role: 'assistant', text: '', sources: [], terminal: null, traceId },
     ]);
+
+    // A greeting is not a corpus question. Answering it with a refusal was the
+    // single worst thing this page did: it read as broken on the first keystroke.
+    if (classifyIntent(trimmed) !== 'ask') {
+      const titles = (this.bundleState()?.projects ?? []).map((project) => project.title);
+      this.patch(answerIndex, (entry) => {
+        entry.text = cannedIntro(titles);
+      });
+      this.busy.set(false);
+      return;
+    }
 
     try {
       await this.ensureCorpus();

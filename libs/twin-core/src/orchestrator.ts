@@ -61,10 +61,16 @@ export async function* ask(
   }
 
   const check = validateCitations(answer, sources);
+  if (check.totalMarkers === 0) {
+    // Nothing was cited, so there is nothing to verify. This is the common failure
+    // of a small model, and it is not the same as inventing a source.
+    yield { type: 'abstain', reason: 'no_citations', suggestions: await deps.suggestions() };
+    return;
+  }
   if (check.grounded < 1) {
     yield {
       type: 'abstain',
-      reason: 'ungrounded_citations',
+      reason: 'unknown_citations',
       suggestions: await deps.suggestions(),
     };
     return;

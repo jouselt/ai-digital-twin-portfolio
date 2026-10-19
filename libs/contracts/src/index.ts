@@ -47,6 +47,11 @@ export interface AskRequest {
 export type AbstainReason =
   | 'no_retrieval_above_floor'
   | 'model_declined'
+  /** The model answered without citing anything, so nothing could be verified. */
+  | 'no_citations'
+  /** The model cited a source number that was never retrieved. */
+  | 'unknown_citations'
+  /** Kept for older clients; new answers use the two reasons above. */
   | 'ungrounded_citations';
 
 export interface AbstainPayload {

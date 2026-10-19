@@ -128,13 +128,15 @@ describe('ask abstention', () => {
     const frames = await collect(new CannedGenerator([], ['Made this up [9].']));
 
     expect(textOf(frames)).toBe('Made this up [9].');
-    expect(frames.at(-1)).toMatchObject({ type: 'abstain', reason: 'ungrounded_citations' });
+    expect(frames.at(-1)).toMatchObject({ type: 'abstain', reason: 'unknown_citations' });
   });
 
-  it('abstains when the answer cites nothing at all', async () => {
+  it('abstains for a different reason when the answer cites nothing at all', async () => {
     const frames = await collect(new CannedGenerator([], ['He did a lot of good work.']));
 
-    expect(frames.at(-1)).toMatchObject({ type: 'abstain', reason: 'ungrounded_citations' });
+    // Not the same failure as inventing a source: nothing was cited, so nothing
+    // could be checked. The visitor-facing copy depends on that difference.
+    expect(frames.at(-1)).toMatchObject({ type: 'abstain', reason: 'no_citations' });
   });
 });
 
