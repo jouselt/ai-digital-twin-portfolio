@@ -103,6 +103,12 @@ import { TwinService, type TwinMessage } from './twin.service';
               </p>
             }
 
+            @if (message.terminal?.kind === 'quote') {
+              <p class="verdict quoted">
+                Quoted from the record · not generated · trace {{ message.traceId }}
+              </p>
+            }
+
             @if (message.terminal?.kind === 'abstain') {
               <div class="verdict refused">
                 <strong>{{ refusalTitle(message) }}</strong>
@@ -368,6 +374,11 @@ import { TwinService, type TwinMessage } from './twin.service';
       padding-top: 0.9rem;
       border-top: 1px solid var(--line);
       font-size: 0.85rem;
+    }
+
+    .verdict.quoted {
+      color: var(--ink-soft);
+      font-weight: 600;
     }
 
     .verdict.grounded {

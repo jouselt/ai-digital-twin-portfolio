@@ -47,3 +47,4 @@ export {
 } from './bundle';
 
 export { cannedIntro, classifyIntent, type QuestionIntent } from './intent';
+export { hasProse } from './orchestrator';

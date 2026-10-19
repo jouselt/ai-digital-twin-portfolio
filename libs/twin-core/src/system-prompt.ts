@@ -28,6 +28,8 @@ export function buildSystemPrompt(sources: readonly SourceRef[]): string {
     '',
     'Rules shown by the example: start with the fact itself, never with "Yes" or "I think",',
     'and end that sentence with the marker. A sentence with a fact and no marker is a failure.',
+    'Markers alone are also a failure: never reply with "[1]" or "[1][4]" and nothing else.',
+    'Write the sentence the marker belongs to, quoting the source wording when it helps.',
     '',
     'SOURCES',
     '',

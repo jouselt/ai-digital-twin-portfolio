@@ -25,7 +25,7 @@ import { IndexedDbVectorCache, type VectorCache } from './vector-cache';
 export type TwinStatus = 'idle' | 'probing' | 'fallback' | 'loading' | 'ready' | 'error';
 
 export interface TwinTerminal {
-  readonly kind: 'done' | 'abstain';
+  readonly kind: 'done' | 'abstain' | 'quote';
   readonly grounded?: number;
   readonly reason?: string;
   readonly suggestions?: readonly string[];
@@ -278,6 +278,21 @@ export class TwinService {
       .map((message) => ({ role: message.role, content: message.text }));
   }
 
+  /** Only for model failures that still have a retrieved passage behind them. */
+  private quoteFrom(sources: readonly SourceRef[], reason: string): string | null {
+    if (reason !== 'no_citations' && reason !== 'no_prose') return null;
+    const top = sources[0];
+    if (top === undefined) return null;
+
+    const sentence = top.content
+      .replace(/\[[^\]]*\]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .split(/(?<=[.!?])\s/)[0];
+    const trimmed = sentence.length > 240 ? `${sentence.slice(0, 237).trimEnd()}...` : sentence;
+    return `From the record: "${trimmed}" [1]`;
+  }
+
   private apply(frame: ChatEvent, answerIndex: number): void {
     this.patch(answerIndex, (entry) => {
       switch (frame.type) {
@@ -293,13 +308,24 @@ export class TwinService {
         case 'done':
           entry.terminal = { kind: 'done', grounded: frame.grounded };
           break;
-        case 'abstain':
+        case 'abstain': {
+          // The model failed to write a citable sentence. A weak model does that
+          // often, and leaving the visitor with nothing wastes the retrieval that
+          // already succeeded. Quoting the source is honest: the words are the
+          // record's, and the marker points at the passage they came from.
+          const quote = this.quoteFrom(entry.sources, frame.reason);
+          if (quote !== null) {
+            entry.text = quote;
+            entry.terminal = { kind: 'quote', grounded: 1 };
+            break;
+          }
           entry.terminal = {
             kind: 'abstain',
             reason: frame.reason,
             suggestions: frame.suggestions,
           };
           break;
+        }
         default:
           break;
       }

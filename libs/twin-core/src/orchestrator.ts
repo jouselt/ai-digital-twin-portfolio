@@ -61,6 +61,13 @@ export async function* ask(
   }
 
   const check = validateCitations(answer, sources);
+  if (check.totalMarkers > 0 && !hasProse(check.text)) {
+    // Seen in a real browser: the answer was literally "[1][4]" and every marker
+    // resolved, so the guard called it grounded. A citation with no sentence is
+    // not a claim, and there is nothing for the visitor to read.
+    yield { type: 'abstain', reason: 'no_prose', suggestions: await deps.suggestions() };
+    return;
+  }
   if (check.totalMarkers === 0) {
     // Nothing was cited, so there is nothing to verify. This is the common failure
     // of a small model, and it is not the same as inventing a source.
@@ -124,6 +131,12 @@ async function* generate(
     yield { type: 'delta', text: answer };
   }
   return answer;
+}
+
+/** At least three words and ten characters of actual text, markers excluded. */
+export function hasProse(text: string): boolean {
+  const stripped = text.replace(/\[\d{1,3}\]/g, ' ').trim();
+  return stripped.length >= 10 && stripped.split(/\s+/).filter((word) => /[a-z0-9]/i.test(word)).length >= 3;
 }
 
 export function messagesFor(request: AskRequest, historyTurns: number): ChatTurn[] {

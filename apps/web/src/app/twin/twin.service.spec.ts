@@ -205,3 +205,23 @@ describe('TwinService small talk', () => {
     expect(service.messages().at(-1)?.terminal?.kind).toBe('done');
   });
 });
+
+describe('TwinService when the model cites without writing prose', () => {
+  it('answers with the passage instead of leaving the visitor with markers', async () => {
+    await TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection()],
+    }).compileComponents();
+    const service = TestBed.inject(TwinService);
+    // Exactly what the browser produced for "What did he ship for autodesk?".
+    const { environment } = environmentWithModelSupport(['[1][4]']);
+    service.useEnvironment(environment);
+    await service.init();
+
+    await service.ask('What did he ship for autodesk?');
+
+    const answer = service.messages().at(-1);
+    expect(answer?.terminal?.kind).toBe('quote');
+    expect(answer?.text).toContain('From the record:');
+    expect(answer?.text).toContain('[1]');
+  });
+});

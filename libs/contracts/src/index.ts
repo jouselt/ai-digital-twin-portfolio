@@ -49,6 +49,8 @@ export type AbstainReason =
   | 'model_declined'
   /** The model answered without citing anything, so nothing could be verified. */
   | 'no_citations'
+  /** The model emitted markers with no sentence around them, so there is no claim. */
+  | 'no_prose'
   /** The model cited a source number that was never retrieved. */
   | 'unknown_citations'
   /** Kept for older clients; new answers use the two reasons above. */

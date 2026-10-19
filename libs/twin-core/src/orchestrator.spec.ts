@@ -1,7 +1,7 @@
 import type { AskRequest, ChatEvent, SourceRef } from '@twin/contracts';
 
 import { CannedGenerator } from './generation';
-import { ask, isDecline, messagesFor, type TwinEngineDeps } from './orchestrator';
+import { ask, hasProse, isDecline, messagesFor, type TwinEngineDeps } from './orchestrator';
 
 const sources: SourceRef[] = [
   {
@@ -137,6 +137,27 @@ describe('ask abstention', () => {
     // Not the same failure as inventing a source: nothing was cited, so nothing
     // could be checked. The visitor-facing copy depends on that difference.
     expect(frames.at(-1)).toMatchObject({ type: 'abstain', reason: 'no_citations' });
+  });
+});
+
+describe('markers without prose', () => {
+  it('refuses an answer that is only citation markers', async () => {
+    // Reproduced from a real answer to "What did he ship for autodesk?".
+    const frames = await collect(new CannedGenerator([], ['[1][4]']));
+
+    expect(frames.at(-1)).toMatchObject({ type: 'abstain', reason: 'no_prose' });
+  });
+
+  it('accepts a short but real sentence with a marker', async () => {
+    const frames = await collect(new CannedGenerator([], ['It shipped in four months [1].']));
+
+    expect(frames.at(-1)).toMatchObject({ type: 'done', grounded: 1 });
+  });
+
+  it('does not count markers as prose', () => {
+    expect(hasProse('[1][4]')).toBe(false);
+    expect(hasProse(' [2] [3] [4] ')).toBe(false);
+    expect(hasProse('It shipped in four months [1].')).toBe(true);
   });
 });
 
