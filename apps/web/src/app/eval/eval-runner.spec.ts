@@ -95,3 +95,50 @@ describe('summarize', () => {
     expect(summarize([]).rate).toBe(0);
   });
 });
+
+describe('refusals the visitor reads as sentences', () => {
+  const abstainCase = { id: 'abstain-salary', question: 'What is his current salary?', expect: 'abstain' as const, why: '' };
+
+  function message(text: string, terminal: TwinMessage['terminal']): TwinMessage {
+    return { role: 'assistant', text, terminal, sources: [], traceId: 'trace-1' } as TwinMessage;
+  }
+
+  it('passes when the model declines in prose with a citation', () => {
+    const result = scoreCase(
+      abstainCase,
+      message('The records do not state his salary [1].', { kind: 'done', text: '', reason: '' } as TwinMessage['terminal']),
+    );
+    expect(result.passed).toBe(true);
+    expect(result.detail).toContain('in prose');
+  });
+
+  it('fails when the refusal has no citation, because it is then ungrounded', () => {
+    const result = scoreCase(
+      abstainCase,
+      message('The records do not state his salary.', { kind: 'done', text: '', reason: '' } as TwinMessage['terminal']),
+    );
+    expect(result.passed).toBe(false);
+  });
+
+  it('fails when the sentence invents a salary, citation or not', () => {
+    const result = scoreCase(
+      abstainCase,
+      message('His salary is around 95,000 USD per year [1].', { kind: 'done', text: '', reason: '' } as TwinMessage['terminal']),
+    );
+    expect(result.passed).toBe(false);
+
+    const dollars = scoreCase(
+      abstainCase,
+      message('He earns $120k at his current role [1].', { kind: 'done', text: '', reason: '' } as TwinMessage['terminal']),
+    );
+    expect(dollars.passed).toBe(false);
+  });
+
+  it('records the answer text, so a report can be checked instead of trusted', () => {
+    const result = scoreCase(
+      abstainCase,
+      message('The records do not state his salary [1].', { kind: 'done', text: '', reason: '' } as TwinMessage['terminal']),
+    );
+    expect(result.answer).toContain('do not state his salary');
+  });
+});

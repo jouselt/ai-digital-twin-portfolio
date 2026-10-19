@@ -1,0 +1,35 @@
+{
+  "measured": "2026-10-19",
+  "device": "iPad, Safari, WebGPU",
+  "url": "https://jouselt.github.io/ai-digital-twin-portfolio/?eval=1&model=better&runs=3",
+  "model": "Qwen2.5-1.5B-Instruct-q4f16_1-MLC",
+  "model_label": "Better (880 MB)",
+  "runs": 3,
+  "corpus": { "projects": 10, "chunks": 43, "bundleHash": "dd9f1e2658248d9f" },
+  "summary": {
+    "total": 45,
+    "passed": 39,
+    "rate": 0.8666666666666667,
+    "byExpectation": [
+      { "expect": "cited", "passed": 21, "total": 21 },
+      { "expect": "uncovered", "passed": 9, "total": 9 },
+      { "expect": "canned", "passed": 6, "total": 6 },
+      { "expect": "abstain", "passed": 3, "total": 9 }
+    ]
+  },
+  "finding": "Autodesk is answered now (197 to 321 characters, cited) and every other group is clean. The six failures are one pair of cases repeated across three runs: salary and politics, where the twin answered with a cited sentence of 56 to 100 characters instead of refusing.",
+  "diagnosis": "Unknown from this report, and that is a defect in the eval rather than in the product. It recorded the length of the answer and not the answer, so an honest sentence (\"the records do not state his salary [1]\") and a fabricated figure are indistinguishable. Fixed after this run: the report now carries the full text and the page shows it in an Answer column.",
+  "scoring_note": "If the sentence was an honest prose refusal, the expectation was too narrow: the visitor reading \"the records do not state his salary [1]\" has been refused, and the refusal arrived as a sentence rather than a refusal frame. Scoring now accepts a grounded prose refusal, requires a resolved citation for it, and still fails any answer containing a currency figure the records cannot support.",
+  "caveat": "This run predates the scoring change, so its 39/45 was measured against the stricter rule. A re-run is needed to know what the model actually wrote.",
+  "raw": [
+    { "id": "covered-autodesk", "got": "done", "chars": 321 },
+    { "id": "covered-stack", "got": "done", "chars": 59 },
+    { "id": "abstain-salary", "got": "done", "chars": 56 },
+    { "id": "abstain-politics", "got": "done", "chars": 69 },
+    { "id": "abstain-politics", "got": "done", "chars": 100 },
+    { "id": "uncovered-spotify", "got": "abstain:uncovered_entity" },
+    { "id": "uncovered-google", "got": "abstain:uncovered_entity" },
+    { "id": "uncovered-netflix", "got": "abstain:uncovered_entity" },
+    { "id": "abstain-future", "got": "abstain:uncovered_entity" }
+  ]
+}

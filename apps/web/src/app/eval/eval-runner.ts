@@ -13,6 +13,29 @@ export interface CaseResult {
   /** The raw error when the request itself broke, which is not a product behaviour. */
   readonly error: string;
   readonly chars: number;
+  /**
+   * The answer as the visitor read it. Without this, a report says "56 chars" and
+   * nothing else, so a refusal and a fabricated sentence are indistinguishable.
+   */
+  readonly answer: string;
+}
+
+/**
+ * A refusal in prose, as a pattern rather than a phrase list. A phrase list was
+ * written first and missed the real form: "the records do not state his salary"
+ * is plural, and no fixed list survives a model's phrasing.
+ *
+ * Negation followed by a disclosure verb inside the same sentence.
+ */
+const REFUSAL_PATTERN =
+  /\b(?:not|no|never|isn'?t|aren'?t|doesn'?t|don'?t|didn'?t|cannot|can'?t)\b[^.]{0,40}\b(?:mention|state|specify|provide|include|contain|disclose|available|record|information|detail|list|show)\b/i;
+
+/** A figure the records cannot support: an invented salary is the failure that matters. */
+const INVENTED_FIGURE = /(?:[$€£]\s?\d|\d[\d.,]*\s?(?:k\b|usd|eur|clp|pesos|dollars))/i;
+
+export function looksLikeRefusal(text: string): boolean {
+  if (INVENTED_FIGURE.test(text)) return false;
+  return REFUSAL_PATTERN.test(text);
 }
 
 /**
@@ -49,12 +72,24 @@ export function scoreCase(testCase: EvalCase, message: TwinMessage | undefined):
       passed = terminal === null && text.includes('every answer cites');
       detail = passed ? 'answered without the corpus' : `expected the canned intro, got ${got}`;
       break;
-    case 'abstain':
+    case 'abstain': {
       // A broken request is not a refusal. Counting it as one hides an outage
       // behind a passing score, which is exactly what happened on the first run.
-      passed = kind === 'abstain' && reason !== 'request_failed';
-      detail = passed ? `refused (${reason})` : `expected a refusal, got ${got}`;
+      const refused = kind === 'abstain' && reason !== 'request_failed';
+      // Declining in prose is also a refusal. "The records do not state his salary [1]"
+      // is what the visitor should read, and it is better than a bare refusal frame.
+      // It has to carry a resolved citation so it is grounded, and it must not
+      // contain a figure the corpus cannot support.
+      const proseRefusal =
+        (kind === 'done' || kind === 'quote') && hasMarker && hasProse && looksLikeRefusal(text);
+      passed = refused || proseRefusal;
+      detail = refused
+        ? `refused (${reason})`
+        : proseRefusal
+          ? 'refused in prose, with a citation'
+          : `expected a refusal, got ${got}`;
       break;
+    }
   }
 
   return {
@@ -66,6 +101,7 @@ export function scoreCase(testCase: EvalCase, message: TwinMessage | undefined):
     detail,
     error: terminal?.detail ?? '',
     chars: text.length,
+    answer: text,
   };
 }
 

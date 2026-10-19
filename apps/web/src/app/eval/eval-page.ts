@@ -85,15 +85,17 @@ import { GOLDEN_SET } from './golden-set';
 
       <table>
         <thead>
-          <tr><th>Case</th><th>Expected</th><th>Got</th><th>Verdict</th><th>Raw error</th></tr>
+          <tr><th>Case</th><th>Expected</th><th>Got</th><th>Verdict</th><th>Answer the visitor read</th><th>Raw error</th></tr>
         </thead>
         <tbody>
-          @for (row of results(); track row.id) {
+          <!-- track $index: with ?runs=N the same case repeats, so ids are not unique. -->
+          @for (row of results(); track $index) {
             <tr [class.failed]="!row.passed">
               <td>{{ row.question }}</td>
               <td>{{ row.expect }}</td>
               <td>{{ row.got }}</td>
               <td>{{ row.detail }}</td>
+              <td class="answer">{{ row.answer }}</td>
               <td class="error">{{ row.error }}</td>
             </tr>
           }
