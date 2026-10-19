@@ -29,6 +29,14 @@ import { GOLDEN_SET } from './golden-set';
         <p class="status">Running {{ done() }} of {{ GOLDEN_SET.length }}…</p>
       }
 
+      @if (broken()) {
+        <p class="broken">
+          {{ broken() }} cases failed inside the request itself, not in the answer path. That is an
+          environment problem (model download or GPU), not a product result: the score below
+          undercounts what the twin does.
+        </p>
+      }
+
       @if (summary(); as result) {
         <div class="score">
           <strong>{{ result.passed }} / {{ result.total }}</strong>
@@ -47,7 +55,7 @@ import { GOLDEN_SET } from './golden-set';
 
       <table>
         <thead>
-          <tr><th>Case</th><th>Expected</th><th>Got</th><th>Verdict</th></tr>
+          <tr><th>Case</th><th>Expected</th><th>Got</th><th>Verdict</th><th>Raw error</th></tr>
         </thead>
         <tbody>
           @for (row of results(); track row.id) {
@@ -56,6 +64,7 @@ import { GOLDEN_SET } from './golden-set';
               <td>{{ row.expect }}</td>
               <td>{{ row.got }}</td>
               <td>{{ row.detail }}</td>
+              <td class="error">{{ row.error }}</td>
             </tr>
           }
         </tbody>
@@ -151,6 +160,22 @@ import { GOLDEN_SET } from './golden-set';
       color: var(--brand-deep);
     }
 
+    .error {
+      max-width: 22rem;
+      font-size: 0.78rem;
+      color: #a3282f;
+      word-break: break-word;
+    }
+
+    .broken {
+      margin: 0;
+      padding: 0.9rem 1rem;
+      background: rgba(239, 123, 132, 0.12);
+      border-left: 4px solid var(--accent);
+      border-radius: 10px;
+      color: var(--ink-soft);
+    }
+
     tr.failed td {
       background: rgba(239, 123, 132, 0.1);
     }
@@ -164,6 +189,7 @@ export class EvalPage implements OnInit {
   readonly running = signal(false);
   readonly done = signal(0);
   readonly copied = signal(false);
+  readonly broken = signal(0);
 
   ngOnInit(): void {
     void this.run();
@@ -187,6 +213,7 @@ export class EvalPage implements OnInit {
     }
 
     this.summary.set(summarize(collected));
+    this.broken.set(collected.filter((row) => row.error.length > 0).length);
     this.running.set(false);
     (globalThis as { __TWIN_EVAL__?: unknown }).__TWIN_EVAL__ = {
       summary: this.summary(),

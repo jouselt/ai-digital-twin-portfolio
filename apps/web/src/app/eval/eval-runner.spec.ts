@@ -45,6 +45,16 @@ describe('scoreCase', () => {
     expect(scoreCase(cited, refused).passed).toBe(false);
   });
 
+  it('does not count a broken request as a refusal', () => {
+    const brokenRequest = message({
+      terminal: { kind: 'abstain', reason: 'request_failed', detail: 'Cache.add() network error' },
+    });
+
+    // The first real run scored 3/14 and called these passes.
+    expect(scoreCase(abstain, brokenRequest).passed).toBe(false);
+    expect(scoreCase(abstain, brokenRequest).error).toContain('Cache.add');
+  });
+
   it('distinguishes a canned intro from a refusal', () => {
     const intro = message({ text: 'I answer from written project records, and every answer cites the passage.' });
 

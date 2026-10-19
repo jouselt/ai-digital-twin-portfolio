@@ -10,6 +10,8 @@ export interface CaseResult {
   readonly passed: boolean;
   /** One line explaining the verdict, so a failure is diagnosable from the report. */
   readonly detail: string;
+  /** The raw error when the request itself broke, which is not a product behaviour. */
+  readonly error: string;
   readonly chars: number;
 }
 
@@ -48,12 +50,23 @@ export function scoreCase(testCase: EvalCase, message: TwinMessage | undefined):
       detail = passed ? 'answered without the corpus' : `expected the canned intro, got ${got}`;
       break;
     case 'abstain':
-      passed = kind === 'abstain';
+      // A broken request is not a refusal. Counting it as one hides an outage
+      // behind a passing score, which is exactly what happened on the first run.
+      passed = kind === 'abstain' && reason !== 'request_failed';
       detail = passed ? `refused (${reason})` : `expected a refusal, got ${got}`;
       break;
   }
 
-  return { id: testCase.id, question: testCase.question, expect: testCase.expect, got, passed, detail, chars: text.length };
+  return {
+    id: testCase.id,
+    question: testCase.question,
+    expect: testCase.expect,
+    got,
+    passed,
+    detail,
+    error: terminal?.detail ?? '',
+    chars: text.length,
+  };
 }
 
 export interface EvalSummary {
