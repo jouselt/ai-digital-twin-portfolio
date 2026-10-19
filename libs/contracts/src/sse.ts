@@ -6,7 +6,7 @@
  * a test in this package.
  */
 
-import type { ChatEvent, SourceRef } from './index.js';
+import type { ChatEvent, SourceRef } from './index';
 
 /** Serialise one frame as a Server-Sent Event. */
 export function encodeSseEvent(event: ChatEvent): string {

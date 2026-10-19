@@ -5,9 +5,9 @@ import {
   EMBEDDING_DIMENSIONS,
   MAX_TOKENS_CAP,
   RETRIEVAL_MIN_SCORE,
-} from './index.js';
-import { encodeSseEvent, parseSseFrame, splitSseBuffer } from './sse.js';
-import type { ChatEvent, SourceRef } from './index.js';
+} from './index';
+import { encodeSseEvent, parseSseFrame, splitSseBuffer } from './sse';
+import type { ChatEvent, SourceRef } from './index';
 
 const source: SourceRef = {
   chunkId: 'f1f1',
