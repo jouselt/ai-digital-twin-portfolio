@@ -51,6 +51,8 @@ export type AbstainReason =
   | 'no_citations'
   /** The model emitted markers with no sentence around them, so there is no claim. */
   | 'no_prose'
+  /** The question names a company or product the corpus never mentions. */
+  | 'uncovered_entity'
   /** The model cited a source number that was never retrieved. */
   | 'unknown_citations'
   /** Kept for older clients; new answers use the two reasons above. */

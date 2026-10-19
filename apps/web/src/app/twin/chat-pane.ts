@@ -501,6 +501,8 @@ export class ChatPane implements OnInit {
     switch (message.terminal?.reason) {
       case 'model_declined':
         return 'The model declined to answer.';
+      case 'uncovered_entity':
+        return 'No record of that.';
       case 'no_citations':
         return 'That answer cited nothing, so it could not be verified.';
       case 'unknown_citations':
@@ -518,6 +520,9 @@ export class ChatPane implements OnInit {
     switch (message.terminal?.reason) {
       case 'model_declined':
         return 'The passages retrieved do not actually answer the question.';
+      case 'uncovered_entity':
+        // The detail names the entity, which is the useful part.
+        return 'The written records do not mention it, so there is nothing to cite. Ask about a project above.';
       case 'no_citations':
         return 'The model wrote an answer without markers, so there was no evidence to check it against.';
       case 'unknown_citations':

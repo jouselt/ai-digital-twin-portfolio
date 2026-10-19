@@ -48,3 +48,4 @@ export {
 
 export { cannedIntro, classifyIntent, type QuestionIntent } from './intent';
 export { hasProse } from './orchestrator';
+export { uncoveredEntities } from './coverage';

@@ -4,6 +4,7 @@ import {
   ask as runTwin,
   cannedIntro,
   classifyIntent,
+  uncoveredEntities,
   EMBEDDING_MODEL_ID,
   MODEL_CHOICES,
   parseBundle,
@@ -166,6 +167,22 @@ export class TwinService {
       return;
     }
 
+    // A company the corpus never mentions cannot be answered from it, and cosine
+    // similarity will not tell the difference: measured 0.71 to 0.74 for a
+    // question about Autodesk against 0.73 for a covered one. Ask the text first.
+    const missing = uncoveredEntities(trimmed, this.corpusText());
+    if (missing.length > 0) {
+      this.patch(answerIndex, (entry) => {
+        entry.terminal = {
+          kind: 'abstain',
+          reason: 'uncovered_entity',
+          detail: `No record of ${missing.join(', ')}. The corpus covers ${this.projectCount()} projects, none of them that.`,
+        };
+      });
+      this.busy.set(false);
+      return;
+    }
+
     try {
       await this.ensureCorpus();
       const embedder = this.embedder;
@@ -269,6 +286,26 @@ export class TwinService {
       this.progressText.set(`chat model · ${text}`);
     });
     this.generator = new WebLlmGenerator(chatEngine);
+  }
+
+  /**
+   * Everything the corpus actually says, for the coverage check. Derived from the
+   * bundle on demand: the check runs before any model is loaded, so caching this
+   * inside the model-loading path left it empty exactly when it was needed.
+   */
+  private corpusText(): string {
+    const bundle = this.bundleState();
+    if (bundle === null) return '';
+    return [
+      ...bundle.projects.map((project) =>
+        [project.title, project.client, project.role, ...project.stack].join(' '),
+      ),
+      ...bundle.chunks.map((chunk) => `${chunk.title} ${chunk.content}`),
+    ].join(' ');
+  }
+
+  private projectCount(): number {
+    return this.bundleState()?.projects.length ?? 0;
   }
 
   private history(): { role: 'user' | 'assistant'; content: string }[] {

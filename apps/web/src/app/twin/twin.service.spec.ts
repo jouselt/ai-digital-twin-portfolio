@@ -161,7 +161,7 @@ describe('TwinService with a model it can run', () => {
     service.useEnvironment(environment);
     await service.init();
 
-    await service.ask('What did he do at Google?');
+    await service.ask('What did he do at Disney Parks?');
 
     const answer = service.messages().at(-1);
     expect(answer?.text).toBe('');
@@ -212,16 +212,54 @@ describe('TwinService when the model cites without writing prose', () => {
       providers: [provideZonelessChangeDetection()],
     }).compileComponents();
     const service = TestBed.inject(TwinService);
-    // Exactly what the browser produced for "What did he ship for autodesk?".
+    // The shape the browser produced: markers and nothing else. The question has
+    // to be one the corpus covers, or the entity guard answers before the model.
     const { environment } = environmentWithModelSupport(['[1][4]']);
+    service.useEnvironment(environment);
+    await service.init();
+
+    await service.ask('What did he ship for Disney Parks?');
+
+    const answer = service.messages().at(-1);
+    expect(answer?.terminal?.kind).toBe('quote');
+    expect(answer?.text).toContain('From the record:');
+    expect(answer?.text).toContain('[1]');
+  });
+});
+
+describe('TwinService when the question names a company with no record', () => {
+  let service: TwinService;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection()],
+    }).compileComponents();
+    service = TestBed.inject(TwinService);
+  });
+
+  it('abstains without loading a model, and names what is missing', async () => {
+    const { environment, recorder } = environmentWithModelSupport();
     service.useEnvironment(environment);
     await service.init();
 
     await service.ask('What did he ship for autodesk?');
 
     const answer = service.messages().at(-1);
-    expect(answer?.terminal?.kind).toBe('quote');
-    expect(answer?.text).toContain('From the record:');
-    expect(answer?.text).toContain('[1]');
+    expect(answer?.terminal?.reason).toBe('uncovered_entity');
+    expect(answer?.terminal?.detail).toContain('autodesk');
+    expect(answer?.text).toBe('');
+    // No 290 MB download to answer a question the corpus cannot answer.
+    expect(recorder.loads.length).toBe(0);
+  });
+
+  it('still answers a question about a company the corpus covers', async () => {
+    const { environment, recorder } = environmentWithModelSupport();
+    service.useEnvironment(environment);
+    await service.init();
+
+    await service.ask('What did he ship for Disney Parks?');
+
+    expect(recorder.loads.length).toBe(2);
+    expect(service.messages().at(-1)?.terminal?.kind).toBe('done');
   });
 });
