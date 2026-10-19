@@ -27,6 +27,12 @@ describe('uncoveredEntities', () => {
     expect(uncoveredEntities('At Google, what did he build?', corpus)).toEqual(['Google']);
   });
 
+  it('does not mistake a modal verb for a company', () => {
+    // A real report read: 'No record of Will, Berlin.'
+    expect(uncoveredEntities('Will he accept a job in Berlin next year?', corpus)).toEqual(['Berlin']);
+    expect(uncoveredEntities('Would he move to Berlin?', corpus)).toEqual(['Berlin']);
+  });
+
   it('returns each missing name once, whatever the casing', () => {
     const found = uncoveredEntities('autodesk and Autodesk both', corpus);
 

@@ -21,6 +21,7 @@ import {
   type MlcEngineLike,
 } from '@twin/core';
 
+import { sharesContentWord } from './relevance';
 import { IndexedDbVectorCache, type VectorCache } from './vector-cache';
 
 export type TwinStatus = 'idle' | 'probing' | 'fallback' | 'loading' | 'ready' | 'error';
@@ -86,6 +87,7 @@ export class TwinService {
   private generator: GenerationPort | null = null;
   private embedder: WebLlmEmbedder | null = null;
   private controller: AbortController | null = null;
+  private currentQuestion = '';
   private initialisation: Promise<void> | null = null;
 
   readonly status = signal<TwinStatus>('idle');
@@ -192,6 +194,7 @@ export class TwinService {
       const query = await embedder.embedQuery(trimmed);
       const request: AskRequest = { question: trimmed, history };
       this.controller = new AbortController();
+      this.currentQuestion = trimmed;
 
       const frames = runTwin(
         request,
@@ -316,12 +319,19 @@ export class TwinService {
   }
 
   /** Only for model failures that still have a retrieved passage behind them. */
-  private quoteFrom(sources: readonly SourceRef[], reason: string): string | null {
+  private quoteFrom(sources: readonly SourceRef[], reason: string, question: string): string | null {
     if (reason !== 'no_citations' && reason !== 'no_prose') return null;
-    const top = sources[0];
-    if (top === undefined) return null;
+    // Quoting a passage at a question it has nothing to do with is not an answer.
+    // The eval caught this: 'What is his current salary?' came back as a quote
+    // about structured logging, which reads as if the record mentioned a salary.
+    // The passage quoted is the first that actually shares a word with the
+    // question, which is not always the top-scoring one.
+    const relevant = sources.find((source) =>
+      sharesContentWord(question, `${source.title} ${source.section ?? ''} ${source.content}`),
+    );
+    if (relevant === undefined) return null;
 
-    const sentence = top.content
+    const sentence = relevant.content
       .replace(/\[[^\]]*\]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim()
@@ -350,7 +360,7 @@ export class TwinService {
           // often, and leaving the visitor with nothing wastes the retrieval that
           // already succeeded. Quoting the source is honest: the words are the
           // record's, and the marker points at the passage they came from.
-          const quote = this.quoteFrom(entry.sources, frame.reason);
+          const quote = this.quoteFrom(entry.sources, frame.reason, this.currentQuestion);
           if (quote !== null) {
             entry.text = quote;
             entry.terminal = { kind: 'quote', grounded: 1 };

@@ -218,7 +218,7 @@ describe('TwinService when the model cites without writing prose', () => {
     service.useEnvironment(environment);
     await service.init();
 
-    await service.ask('What did he ship for Disney Parks?');
+    await service.ask('How was the logging adopted?');
 
     const answer = service.messages().at(-1);
     expect(answer?.terminal?.kind).toBe('quote');
@@ -261,5 +261,22 @@ describe('TwinService when the question names a company with no record', () => {
 
     expect(recorder.loads.length).toBe(2);
     expect(service.messages().at(-1)?.terminal?.kind).toBe('done');
+  });
+});
+
+describe('TwinService when the model fails on a question the corpus cannot answer', () => {
+  it('abstains rather than quoting an unrelated passage', async () => {
+    await TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection()],
+    }).compileComponents();
+    const service = TestBed.inject(TwinService);
+    const { environment } = environmentWithModelSupport(['[1]']);
+    service.useEnvironment(environment);
+    await service.init();
+
+    // From the eval run: this came back as a quote about structured logging.
+    await service.ask('What is his current salary?');
+
+    expect(service.messages().at(-1)?.terminal?.kind).toBe('abstain');
   });
 });

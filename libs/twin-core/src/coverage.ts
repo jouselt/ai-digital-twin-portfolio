@@ -19,6 +19,8 @@ const QUESTION_WORDS = new Set([
   'tell', 'show', 'give', 'list', 'explain', 'describe', 'summarise', 'summarize',
   'the', 'and', 'but', 'for', 'with', 'about', 'his', 'her', 'their', 'your', 'you',
   'please', 'hi', 'hello', 'hey', 'in', 'on', 'at', 'to', 'of', 'a', 'an', 'i',
+  'will', 'would', 'shall', 'may', 'might', 'must', 'ought', 'has', 'have', 'had',
+  'there', 'they', 'he', 'she', 'it', 'we', 'this', 'that', 'these', 'those',
   'chile', 'english', 'spanish',
 ]);
 
