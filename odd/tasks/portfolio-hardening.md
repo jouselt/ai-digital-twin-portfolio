@@ -43,10 +43,9 @@ list. Refusal stays evidence-driven.
   compares the shown passage to the retrieved content verbatim.
 - T3 Third model option and the recorded rows. Covers S5. Status: done. Two rows
   recorded (`fast-qwen-0.5b.json` 14/14, `better-qwen-1.5b.json` 11/14); the 3B is
-  offered but unmeasured and the README says so. Default stays Fast because it
-  measured better, which inverts the expected answer: the 1.5B declines on three
-  covered questions. Recorded in `odd/` rather than the README alone because the
-  reasoning matters more than the number.
+  offered but unmeasured and the README says so. Default stays Fast on download size and time to
+  first answer, not on accuracy: the 3-run measurement of the 1.5B is 42/42 and it
+  writes 17 of 18 covered answers itself.
 - T4 Telemetry panel and first-token timing. Covers S3. Status: done. 3 Karma tests.
 - T5 Accessibility pass. Covers S4. Status: done. Contrast measured, not eyeballed:
   white on --brand was 3.41:1, so the primary button moved to --brand-deep (5.82:1).
@@ -70,3 +69,9 @@ L4: the second row inverted the assumption. The 1.5B passed 11/14 against the 0.
 14/14, declining three covered questions with model_declined and writing answers half
 the length. Left in the table as found. The eval now accepts ?runs=N, because two
 single runs at temperature 0.2 are anecdotes, not a measurement.
+
+L5: the 1.5B measured 42/42 over three runs, minutes after the same model scored
+11/14 in a single run. The single-run number is kept and marked superseded rather
+than deleted: the variance is the most useful thing the eval produced, and hiding it
+would make every other number in the table look more solid than it is. The README now
+carries the run count on every row.

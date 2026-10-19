@@ -62,24 +62,27 @@ The evals ask whether the visitor got the promised behaviour: a cited answer, a 
 that names the missing record, a canned intro, or an honest abstention. Fourteen cases,
 run in a real browser against the real model.
 
-| Model | Download | Cases passed | Covered questions answered |
+| Model | Download | Cases passed | Wrote the answer itself |
 |---|---|---|---|
-| Qwen2.5-0.5B (Fast, default) | 290 MB | 14/14 | 6 of 6 (4 generated, 2 quoted) |
-| Qwen2.5-1.5B (Better) | 880 MB | 11/14 | 3 of 6 |
+| Qwen2.5-0.5B (Fast, default) | 290 MB | 14/14, one run | 4 of 6 covered |
+| Qwen2.5-1.5B (Better) | 880 MB | **42/42, three runs** | **17 of 18 covered** |
 | Qwen2.5-3B (Best) | 1748 MB | not measured | — |
 
-**The bigger model scored lower, and that is the interesting result.** The 1.5B refused
-three covered questions by emitting the refusal token, where the 0.5B answered them. Its
-answers were also about half as long. Being more cautious is not being more correct: on a
-nine-document corpus the larger model reads the retrieval as insufficient evidence and
-declines. Fast is the default because it measured better, not because it is smaller.
+**The variance is the finding.** The same 1.5B, same settings, nine minutes apart, scored
+11/14 and then 42/42. One run at temperature 0.2 is not a measurement, and that pair is
+the proof. Every row now states how many runs produced it; `?runs=N` repeats the set.
 
-Raw runs live in `evals/results/`, with the caveat written into each file. Two apply:
-each row is a single run at temperature 0.2, so one run is an anecdote rather than a
-measurement, and `?runs=3` exists to measure the variance. And what the 14/14 supports is
-that the product always returns evidence, not that the small model always writes.
+Over three runs the 1.5B passed everything and wrote the answer itself in 17 of 18 covered
+questions, where the 0.5B needed the extractive fallback for 2 of 6. So the reason to
+default to Fast is download size and time to first answer, **not accuracy**. The earlier
+11/14 is kept in `evals/results/` marked superseded, because deleting it would hide the
+most useful thing this eval produced.
 
-The model is selectable in the page: `?model=better`, and `?runs=2` to repeat the set.
+Raw runs live in `evals/results/`, with the caveat written into each file. What the scores
+support is that the product always returns evidence; how often the model writes that
+evidence itself depends on which model the visitor picks.
+
+The model is selectable in the page: `?model=better`, and `?runs=3` to repeat the set.
 
 ## Cost of all this, in bytes
 

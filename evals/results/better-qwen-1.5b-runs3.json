@@ -1,0 +1,23 @@
+{
+  "measured": "2026-10-19",
+  "device": "iPad, Safari, WebGPU",
+  "url": "https://jouselt.github.io/ai-digital-twin-portfolio/?eval=1&model=better&runs=3",
+  "model": "Qwen2.5-1.5B-Instruct-q4f16_1-MLC",
+  "model_label": "Better (880 MB)",
+  "runs": 3,
+  "summary": {
+    "total": 42,
+    "passed": 42,
+    "rate": 1,
+    "byExpectation": [
+      { "expect": "cited", "passed": 18, "total": 18 },
+      { "expect": "uncovered", "passed": 9, "total": 9 },
+      { "expect": "canned", "passed": 6, "total": 6 },
+      { "expect": "abstain", "passed": 9, "total": 9 }
+    ]
+  },
+  "finding": "Over three runs the 1.5B passed every case, and it wrote the answer itself in 17 of 18 covered questions: only the first run of 'How did he handle logging' fell back to a quote. Answers ran 137 to 463 characters, against 45 to 54 in the single bad run.",
+  "variance": "This supersedes the earlier single run of the same model and settings, which scored 11/14 and declined three covered questions. Same model, same temperature, nine minutes apart. A single run at temperature 0.2 is not a measurement, and this pair is the proof: 11/14 and 42/42 from the same binary.",
+  "consequence": "The reason to prefer Fast is download size and time to first answer, not accuracy. Accuracy, measured over three runs, belongs to the 1.5B.",
+  "raw_runs": 3
+}
