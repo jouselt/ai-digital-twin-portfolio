@@ -1,0 +1,171 @@
+import { provideZonelessChangeDetection } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import type { CorpusBundleLike, MlcChatChunk, MlcChatRequest, MlcEngineLike } from '@twin/core';
+
+import { TwinService } from './twin.service';
+import { MemoryVectorCache } from './vector-cache';
+
+const bundle: CorpusBundleLike = {
+  version: 1,
+  bundleHash: 'hash-for-tests',
+  chunkTargetTokens: 320,
+  projects: [
+    {
+      id: 'commerce-observability',
+      title: 'Structured logging across Commerce APIs',
+      client: 'Disney Parks',
+      role: 'Senior Fullstack Developer',
+      period: '2021-present',
+      stack: ['TypeScript'],
+    },
+  ],
+  chunks: [
+    {
+      chunkId: 'commerce-observability:0',
+      projectId: 'commerce-observability',
+      title: 'Structured logging across Commerce APIs',
+      section: 'Outcome',
+      embedText: 'Adopted across 6+ Commerce APIs.',
+      content: 'Adopted across 6+ Commerce APIs.',
+      contentHash: 'abc',
+    },
+    {
+      chunkId: 'commerce-observability:1',
+      projectId: 'commerce-observability',
+      title: 'Structured logging across Commerce APIs',
+      section: 'Context',
+      embedText: 'Commerce is several teams behind one surface.',
+      content: '[context ...] Commerce is several teams behind one surface.',
+      contentHash: 'def',
+    },
+  ],
+};
+
+/** Every vector is identical, so every chunk clears the floor and citations resolve. */
+class FakeEngine implements MlcEngineLike {
+  embeddingCalls = 0;
+  chatCalls = 0;
+
+  private readonly deltas: readonly string[];
+
+  constructor(deltas?: readonly string[]) {
+    this.deltas = deltas ?? ['Adopted across ', '6+ Commerce APIs [1].'];
+  }
+
+  readonly embeddings = {
+    create: async (request: { input: string | string[]; model: string }) => {
+      this.embeddingCalls += 1;
+      const inputs = Array.isArray(request.input) ? request.input : [request.input];
+      return { data: inputs.map(() => ({ embedding: [1, 0, 0, 0] })) };
+    },
+  };
+
+  readonly chat = {
+    completions: {
+      create: async (_request: MlcChatRequest) => {
+        this.chatCalls += 1;
+        const deltas = this.deltas;
+        return (async function* () {
+          for (const delta of deltas) {
+            yield { choices: [{ delta: { content: delta } }] } satisfies MlcChatChunk;
+          }
+        })();
+      },
+    },
+  };
+}
+
+interface Recorder {
+  readonly loads: string[];
+  readonly engines: Map<string, FakeEngine>;
+}
+
+function environmentWithModelSupport(chatDeltas?: readonly string[]): {
+  environment: Parameters<TwinService['useEnvironment']>[0];
+  recorder: Recorder;
+} {
+  const recorder: Recorder = { loads: [], engines: new Map() };
+  const environment = {
+    probe: async () => ({ canRunModel: true, reason: 'ready' as const, adapter: null, message: '' }),
+    loadBundle: async () => bundle,
+    loadEngine: async (modelId: string) => {
+      recorder.loads.push(modelId);
+      const engine = new FakeEngine(
+        modelId.includes('Qwen') && chatDeltas !== undefined ? chatDeltas : undefined,
+      );
+      recorder.engines.set(modelId, engine);
+      return engine as MlcEngineLike;
+    },
+    cache: new MemoryVectorCache(),
+    newTraceId: () => 'trace-test',
+  };
+  return { environment, recorder };
+}
+
+describe('TwinService with a model it can run', () => {
+  let service: TwinService;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection()],
+    }).compileComponents();
+    service = TestBed.inject(TwinService);
+  });
+
+  it('loads the embedding model and the chat model as two separate engines', async () => {
+    const { environment, recorder } = environmentWithModelSupport();
+    service.useEnvironment(environment);
+    await service.init();
+
+    await service.ask('How did he handle observability?');
+
+    // The bug this covers: a single engine loaded with the chat model throws
+    // EmbeddingModelNotFound the moment the corpus is embedded.
+    expect(recorder.loads.length).toBe(2);
+    expect(recorder.loads[0]).toContain('snowflake-arctic-embed-s');
+    expect(recorder.loads[1]).toContain('Qwen');
+    expect(service.status()).toBe('ready');
+  });
+
+  it('streams a grounded answer with citations once the model is loaded', async () => {
+    const { environment } = environmentWithModelSupport();
+    service.useEnvironment(environment);
+    await service.init();
+
+    await service.ask('How did he handle observability?');
+
+    const answer = service.messages().at(-1);
+    expect(answer?.text).toBe('Adopted across 6+ Commerce APIs [1].');
+    expect(answer?.sources.length).toBeGreaterThan(0);
+    expect(answer?.terminal).toEqual({ kind: 'done', grounded: 1 });
+    expect(service.busy()).toBe(false);
+  });
+
+  it('does not re-embed the corpus when only the chat model changes', async () => {
+    const { environment, recorder } = environmentWithModelSupport();
+    service.useEnvironment(environment);
+    await service.init();
+    await service.ask('How did he handle observability?');
+    const embeddingLoads = recorder.loads.filter((id) => id.includes('arctic-embed')).length;
+
+    service.chooseModel('Qwen2.5-1.5B-Instruct-q4f16_1-MLC');
+    await service.ask('And the second question?');
+
+    expect(recorder.loads.filter((id) => id.includes('arctic-embed')).length).toBe(embeddingLoads);
+    expect(recorder.loads.at(-1)).toContain('1.5B');
+  });
+
+  it('abstains instead of guessing when the model declines', async () => {
+    // A chat engine that declines, which is what a small model does at the edge.
+    const { environment } = environmentWithModelSupport(['ABSENT']);
+    service.useEnvironment(environment);
+    await service.init();
+
+    await service.ask('What did he do at Google?');
+
+    const answer = service.messages().at(-1);
+    expect(answer?.text).toBe('');
+    expect(answer?.terminal?.kind).toBe('abstain');
+    expect(answer?.terminal?.reason).toBe('model_declined');
+  });
+});

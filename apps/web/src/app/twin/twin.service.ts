@@ -2,6 +2,7 @@ import { computed, Injectable, signal } from '@angular/core';
 import type { AskRequest, ChatEvent, SourceRef } from '@twin/contracts';
 import {
   ask as runTwin,
+  EMBEDDING_MODEL_ID,
   MODEL_CHOICES,
   parseBundle,
   probeCapabilities,
@@ -125,11 +126,9 @@ export class TwinService {
   chooseModel(modelId: string): void {
     if (modelId === this.modelId()) return;
     this.modelId.set(modelId);
-    // A different model means a different vector space, so the corpus has to be
-    // re-embedded and the loaded engine replaced on the next question.
-    this.chunks = [];
+    // Only the chat engine is replaced. The vector space belongs to the embedding
+    // model, which does not change, so the corpus is not re-embedded for this.
     this.generator = null;
-    this.embedder = null;
   }
 
   cancel(): void {
@@ -186,18 +185,32 @@ export class TwinService {
     }
   }
 
+  /**
+   * Two independent units of work, each loaded once.
+   *
+   * The corpus (embedding model plus vectors) and the chat model are separate
+   * because an MLCEngine only serves the model it was loaded with: asking a chat
+   * model for embeddings throws EmbeddingModelNotFound. Splitting the guards also
+   * means switching the chat model does not reload the embedding engine or
+   * re-embed anything, since the vector space does not change.
+   */
   private async ensureCorpus(): Promise<void> {
-    if (this.generator !== null && this.embedder !== null && this.chunks.length > 0) return;
+    if (this.embedder === null || this.chunks.length === 0) await this.loadCorpus();
+    if (this.generator === null) await this.loadChatModel();
+    this.progress.set(1);
+    this.status.set('ready');
+  }
 
+  private async loadCorpus(): Promise<void> {
     this.status.set('loading');
     const bundle = this.bundleState() ?? (await this.environment.loadBundle());
     this.bundleState.set(bundle);
 
-    const engine = await this.environment.loadEngine(this.modelId(), (value, text) => {
-      this.progress.set(value);
-      this.progressText.set(text);
+    const embeddingEngine = await this.environment.loadEngine(EMBEDDING_MODEL_ID, (value, text) => {
+      this.progress.set(value * 0.2);
+      this.progressText.set(`embedding model · ${text}`);
     });
-    const embedder = new WebLlmEmbedder(engine);
+    const embedder = new WebLlmEmbedder(embeddingEngine);
 
     const cached = await this.environment.cache.read(bundle.bundleHash);
     const vectors = new Map<string, Float32Array>();
@@ -232,9 +245,15 @@ export class TwinService {
     });
 
     this.embedder = embedder;
-    this.generator = new WebLlmGenerator(engine);
-    this.progress.set(1);
-    this.status.set('ready');
+  }
+
+  private async loadChatModel(): Promise<void> {
+    this.status.set('loading');
+    const chatEngine = await this.environment.loadEngine(this.modelId(), (value, text) => {
+      this.progress.set(0.2 + value * 0.8);
+      this.progressText.set(`chat model · ${text}`);
+    });
+    this.generator = new WebLlmGenerator(chatEngine);
   }
 
   private history(): { role: 'user' | 'assistant'; content: string }[] {
