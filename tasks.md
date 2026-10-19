@@ -18,10 +18,10 @@ Scope: eight corpus documents, real Ollama embeddings, real retrieval, real stre
 
 - [ ] `[G]` `libs/contracts` builds with `tsc` and the SSE codec round-trips all six frame types; a malformed frame decodes to `null` instead of throwing. Both apps import the package through the workspace.
 - [ ] `[G]` `apps/api` boots with `ConfigModule` plus a Zod schema over the environment; a missing `OLLAMA_BASE_URL` throws a named error at boot, not at the first request.
-- [ ] `[G]` `OllamaEmbeddingProvider` and `OllamaLlmProvider` bound through injection tokens, with `FakeEmbeddingProvider` and `FakeLlmProvider` bound in the test module so no test needs Ollama.
+- [x] `[G]` `OllamaEmbeddingProvider` and `OllamaLlmProvider` bound through injection tokens, with `FakeEmbeddingProvider` and `FakeLlmProvider` bound in the test module so no test needs Ollama.
 - [ ] `[G]` `IngestService` over `corpus/projects/*.md`: pack to `CHUNK_TARGET_TOKENS = 320` with the 60-token context prefix, `sha256(project_id | ord | content)`, upsert only changed hashes. A second run over an unchanged corpus issues 0 embedding calls.
 - [ ] `[G]` `RetrievalService.search` drops every result below `RETRIEVAL_MIN_SCORE` before the prompt, and an empty result set produces the abstention branch rather than an empty prompt.
-- [ ] `[G]` `POST /api/chat` streams `trace`, then `retrieved`, then one or more `delta`, then exactly one terminal frame (`done` or `abstain`); asserting the order across 20 fake runs. `ABSENT` from the model and `grounded < 1.0` both terminate as `abstain`.
+- [x] `[G]` `POST /api/chat` streams `trace`, then `retrieved`, then one or more `delta`, then exactly one terminal frame (`done` or `abstain`); asserting the order across 20 fake runs. `ABSENT` from the model and `grounded < 1.0` both terminate as `abstain`.
 - [ ] `[G]` Angular `ChatStore` plus `ChatPaneComponent` consume the SSE codec; the citation list renders from `retrieved` before the first `delta` arrives.
 - [ ] `[M]` Deployed behind Caddy on the homelab: a stranger opens the URL, asks about the Commerce API observability work, gets an answer whose citation points at a real document, then asks about an employer that is not in the corpus and sees it abstain with three real topics offered.
 
