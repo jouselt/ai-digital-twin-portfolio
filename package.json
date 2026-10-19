@@ -22,6 +22,7 @@
     "db:up": "docker compose up -d postgres",
     "db:migrate": "for f in apps/api/migrations/*.sql; do docker compose exec -T postgres psql -U twin -d twin -v ON_ERROR_STOP=1 -q < \"$f\" || exit 1; done",
     "bundle": "npm run --workspace @twin/api bundle",
-    "test:web": "CHROME_BIN=${CHROME_BIN:-/run/current-system/sw/bin/google-chrome} npm run --workspace @twin/web test -- --watch=false --browsers=ChromeHeadless"
+    "test:web": "CHROME_BIN=${CHROME_BIN:-/run/current-system/sw/bin/google-chrome} npm run --workspace @twin/web test -- --watch=false --browsers=ChromeHeadless",
+    "build:pages": "npm run bundle && npm run --workspace @twin/web build -- --base-href /ai-digital-twin-portfolio/"
   }
 }
