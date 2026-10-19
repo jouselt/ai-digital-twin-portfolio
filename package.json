@@ -1,0 +1,19 @@
+{
+  "name": "ai-digital-twin-portfolio",
+  "version": "0.0.1",
+  "private": true,
+  "description": "AI digital twin portfolio: grounded answering with citations and abstention, Angular 20.3 + NestJS 11 + pgvector + local Ollama.",
+  "workspaces": [
+    "apps/*",
+    "libs/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build:contracts": "npm run --workspace @twin/contracts build",
+    "test:contracts": "npm run --workspace @twin/contracts test",
+    "typecheck": "npm run build:contracts && tsc -p apps/api/tsconfig.build.json --noEmit && tsc -p apps/web/tsconfig.app.json --noEmit",
+    "test": "npm run test:contracts && npm run --workspace @twin/api test -- --passWithNoTests"
+  }
+}

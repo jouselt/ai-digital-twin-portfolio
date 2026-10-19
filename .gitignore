@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+.pnp.*
+.yarn/*
+
+# Build output
+dist/
+build/
+coverage/
+.angular/
+
+# Contracts build artifact (rebuilt by `npm run build:contracts`)
+libs/contracts/dist/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Logs and editor noise
+*.log
+npm-debug.log*
+.DS_Store
+.idea/
+.vscode/
+
+# Runtime artifacts
+tmp/
+*.eml
