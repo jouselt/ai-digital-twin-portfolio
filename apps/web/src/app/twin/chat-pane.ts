@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
+import { StatusPanel } from './status-panel';
 import { TwinService, type TwinMessage } from './twin.service';
 
 @Component({
   selector: 'app-chat-pane',
-  imports: [FormsModule],
+  imports: [FormsModule, StatusPanel],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="pane">
@@ -54,7 +55,7 @@ import { TwinService, type TwinMessage } from './twin.service';
 
       @if (service.status() === 'loading') {
         <div class="loading" role="status">
-          <progress [value]="service.progress()" max="1"></progress>
+          <progress [value]="service.progress()" max="1" aria-label="Model download progress"></progress>
           <span>{{ service.progressText() }}</span>
         </div>
       }
@@ -80,7 +81,13 @@ import { TwinService, type TwinMessage } from './twin.service';
         </fieldset>
       }
 
-      <ol class="thread">
+      <!-- Announced once per answer. Binding the streaming text here would read
+           every token aloud, which is unusable. -->
+      <p class="visually-hidden" role="status" aria-live="polite">{{ announcement() }}</p>
+
+      <a class="skip-link" href="#answers">Skip to the answer</a>
+
+      <ol class="thread" id="answers" tabindex="-1">
         @for (message of service.messages(); track $index) {
           <li [class.question]="message.role === 'user'" [class.answer]="message.role === 'assistant'">
             <p class="text">{{ message.text }}</p>
@@ -156,6 +163,7 @@ import { TwinService, type TwinMessage } from './twin.service';
             [ngModel]="question()"
             (ngModelChange)="question.set($event)"
             placeholder="What did he ship for Carnival?"
+            aria-label="Ask a question about the project records"
             [disabled]="service.busy()"
             autocomplete="off"
           />
@@ -171,9 +179,7 @@ import { TwinService, type TwinMessage } from './twin.service';
         <p class="status error">{{ service.error() }}</p>
       }
 
-      @if (service.capability()?.adapter; as adapter) {
-        <p class="adapter">running on {{ adapter.vendor }} · {{ adapter.architecture }}</p>
-      }
+      <app-status-panel />
     </section>
   `,
   styles: `
@@ -544,6 +550,30 @@ export class ChatPane implements OnInit {
   readonly question = signal('');
   /** Which citation is expanded, by chunk id. Only one at a time. */
   readonly openSource = signal<string | null>(null);
+
+  /**
+   * The text a screen reader hears, empty until an answer is complete.
+   *
+   * Deliberately not the streaming text: with a live region, every token would be
+   * announced. This returns '' while the answer is still arriving, so the region
+   * changes exactly once.
+   */
+  readonly announcement = computed(() => {
+    const messages = this.service.messages();
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+      const message = messages[index];
+      if (message === undefined || message.role !== 'assistant') continue;
+      if (message.terminal === null) return '';
+      const verdict =
+        message.terminal.kind === 'done'
+          ? 'Answer complete and grounded.'
+          : message.terminal.kind === 'quote'
+            ? 'Answer quoted from the record.'
+            : 'The question could not be answered from the records.';
+      return `${verdict} ${message.text}`.trim();
+    }
+    return '';
+  });
   readonly ready = computed(() => this.service.status() === 'ready');
 
   ngOnInit(): void {

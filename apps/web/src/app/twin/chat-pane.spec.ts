@@ -54,11 +54,37 @@ function engine(): MlcEngineLike {
   } as MlcEngineLike;
 }
 
-function environment() {
+function gatedEngine() {
+  let release: () => void = () => undefined;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+
+  const base = engine();
+  return {
+    release: () => release(),
+    engine: {
+      ...base,
+      chat: {
+        completions: {
+          create: async () =>
+            (async function* () {
+              yield { choices: [{ delta: { content: 'Adopted across 6+ ' } }] } satisfies MlcChatChunk;
+              // Held open so a test can look at the page mid-answer.
+              await gate;
+              yield { choices: [{ delta: { content: 'Commerce APIs [1].' } }] } satisfies MlcChatChunk;
+            })(),
+        },
+      },
+    } as MlcEngineLike,
+  };
+}
+
+function environment(customEngine?: MlcEngineLike) {
   return {
     probe: async () => ({ canRunModel: true, reason: 'ready' as const, adapter: null, message: '' }),
     loadBundle: async () => bundle,
-    loadEngine: async () => engine(),
+    loadEngine: async () => customEngine ?? engine(),
     cache: new MemoryVectorCache(),
     newTraceId: () => 'trace-test',
   };
@@ -119,5 +145,55 @@ describe('ChatPane citations', () => {
 
     expect(element.querySelector('.passage')).toBeNull();
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
+  });
+});
+
+describe('ChatPane accessibility', () => {
+  let service: TwinService;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [ChatPane],
+      providers: [provideZonelessChangeDetection()],
+    }).compileComponents();
+    service = TestBed.inject(TwinService);
+  });
+
+  it('labels the question input and offers a skip link to the answer', async () => {
+    service.useEnvironment(environment() as Parameters<TwinService['useEnvironment']>[0]);
+    await service.init();
+    const fixture = TestBed.createComponent(ChatPane);
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('input[name="question"]')?.getAttribute('aria-label')).toContain(
+      'Ask a question',
+    );
+    expect(element.querySelector('.skip-link')?.getAttribute('href')).toBe('#answers');
+    expect(element.querySelector('#answers')).not.toBeNull();
+  });
+
+  it('announces nothing while the answer is still streaming', async () => {
+    const gated = gatedEngine();
+    service.useEnvironment(environment(gated.engine) as Parameters<TwinService['useEnvironment']>[0]);
+    await service.init();
+    const fixture = TestBed.createComponent(ChatPane);
+    fixture.detectChanges();
+
+    const asking = service.ask('How was the logging adopted?');
+    // Let the first token land without finishing the answer.
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    fixture.detectChanges();
+
+    const live = fixture.nativeElement.querySelector('[aria-live="polite"]') as HTMLElement;
+    expect(live.textContent?.trim()).toBe('');
+
+    gated.release();
+    await asking;
+    fixture.detectChanges();
+
+    // Exactly one announcement, once the answer is complete.
+    expect(live.textContent).toContain('Answer complete and grounded.');
+    expect(live.textContent).toContain('Commerce APIs [1].');
   });
 });

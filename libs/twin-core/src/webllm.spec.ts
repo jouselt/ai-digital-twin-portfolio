@@ -159,6 +159,6 @@ describe('MODEL_CHOICES', () => {
   });
 
   it('quotes the download measured from the registry', () => {
-    expect(MODEL_CHOICES.map((choice) => choice.downloadMb)).toEqual([290, 880]);
+    expect(MODEL_CHOICES.map((choice) => choice.downloadMb)).toEqual([290, 880, 1748]);
   });
 });

@@ -55,6 +55,12 @@ export const MODEL_CHOICES = [
     downloadMb: 880,
     description: 'Better citation discipline and longer answers, three times the download.',
   },
+  {
+    id: 'Qwen2.5-3B-Instruct-q4f16_1-MLC',
+    label: 'Best',
+    downloadMb: 1748,
+    description: 'Writes citable prose most reliably. Six times the download; desktop only in practice.',
+  },
 ] as const;
 
 /** Batch 32 variant, so a whole corpus can be embedded in a few calls. */

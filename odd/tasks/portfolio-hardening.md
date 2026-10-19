@@ -18,8 +18,14 @@ S3. The twin shows its own telemetry: adapter, model, bundle hash, copyable
 labelled as such, not confused with network latency.
 
 S4. The page is usable with a keyboard and a screen reader. Streaming answers are
-announced once, on completion, never per token. Focus moves to the answer when it
-finishes and to the input on load.
+announced once, on completion, never per token. Every control is reachable and
+labelled, and text meets WCAG AA contrast.
+
+Amended during implementation: focus stays in the question input when an answer
+finishes, instead of moving to the answer. Yanking focus mid-conversation steals
+the caret from someone already typing a follow-up, which is worse for the keyboard
+user it was meant to help. The answer is announced through the live region, the
+thread is a skip-link target, and the citations inside it are buttons.
 
 S5. The default model is chosen from measurements, not taste: at least two model
 rows recorded as JSON under `evals/results/`, and the README states which default
@@ -35,9 +41,14 @@ list. Refusal stays evidence-driven.
   typecheck were run locally for this commit.
 - T2 Clickable citations. Covers S2. Status: done. 3 Karma tests, including one that
   compares the shown passage to the retrieved content verbatim.
-- T3 Third model option and the recorded rows. Covers S5. Status: pending.
-- T4 Telemetry panel and first-token timing. Covers S3. Status: pending.
-- T5 Accessibility pass. Covers S4. Status: pending.
+- T3 Third model option and the recorded rows. Covers S5. Status: option done,
+  rows pending on runs from a device with WebGPU. Qwen2.5-3B verified present in the
+  WebLLM model list, not assumed from its download size.
+- T4 Telemetry panel and first-token timing. Covers S3. Status: done. 3 Karma tests.
+- T5 Accessibility pass. Covers S4. Status: done. Contrast measured, not eyeballed:
+  white on --brand was 3.41:1, so the primary button moved to --brand-deep (5.82:1).
+  2 Karma tests, one of which holds an answer mid-stream and asserts the live region
+  stays empty.
 
 ## Log
 
@@ -46,3 +57,8 @@ L1 (user, verbatim): "Sigamos tus recomendaciones, la fase 6 no la quiero implem
 L2: baseline before this work. Eval on an iPad with WebGPU: 14/14 with
 Qwen2.5-0.5B; 4 of the 6 covered cases generated prose, 2 were answered by the
 extractive fallback. Recorded in `evals/results/fast-qwen-0.5b.json`.
+
+L3: contrast was computed for every text pair in the palette. Two failures found:
+white on #1c9c87 at 3.41:1 (the primary button) and --accent at 2.68:1 on white,
+which is only used for decorative borders and bullet glyphs, so it stays. The
+button now uses the darker green already present in the portfolio palette.

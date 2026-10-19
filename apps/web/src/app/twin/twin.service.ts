@@ -26,6 +26,15 @@ import { IndexedDbVectorCache, type VectorCache } from './vector-cache';
 
 export type TwinStatus = 'idle' | 'probing' | 'fallback' | 'loading' | 'ready' | 'error';
 
+/** What the visitor's own machine spent on the last answer. */
+export interface TwinTimings {
+  /** Milliseconds from submit to the first visible token. */
+  readonly firstTokenMs: number | null;
+  /** Milliseconds for the whole answer, as reported by the terminal frame. */
+  readonly totalMs: number;
+  readonly tokensOut: number;
+}
+
 export interface TwinTerminal {
   readonly kind: 'done' | 'abstain' | 'quote';
   readonly grounded?: number;
@@ -88,7 +97,11 @@ export class TwinService {
   private embedder: WebLlmEmbedder | null = null;
   private controller: AbortController | null = null;
   private currentQuestion = '';
+  private requestStartedAt = 0;
+  private firstTokenAt: number | null = null;
   private initialisation: Promise<void> | null = null;
+  /** Telemetry for the last completed answer. Null until one lands. */
+  readonly timings = signal<TwinTimings | null>(null);
 
   readonly status = signal<TwinStatus>('idle');
   readonly capability = signal<Capability | null>(null);
@@ -100,6 +113,8 @@ export class TwinService {
   readonly modelId = signal<string>(MODEL_CHOICES[0].id);
   readonly models = MODEL_CHOICES;
   readonly projects = computed(() => this.bundleState()?.projects ?? []);
+  /** The corpus identity, so a screenshot can be tied to a build of the records. */
+  readonly bundleHash = computed(() => this.bundleState()?.bundleHash ?? null);
 
   /** Test seam: replace the browser before anything runs. */
   useEnvironment(environment: TwinEnvironment): void {
@@ -195,6 +210,9 @@ export class TwinService {
       const request: AskRequest = { question: trimmed, history };
       this.controller = new AbortController();
       this.currentQuestion = trimmed;
+
+      this.requestStartedAt = Date.now();
+      this.firstTokenAt = null;
 
       const frames = runTwin(
         request,
@@ -350,10 +368,17 @@ export class TwinService {
           entry.sources = frame.sources;
           break;
         case 'delta':
+          if (this.firstTokenAt === null) this.firstTokenAt = Date.now();
           entry.text += frame.text;
           break;
         case 'done':
           entry.terminal = { kind: 'done', grounded: frame.grounded };
+          this.timings.set({
+            firstTokenMs:
+              this.firstTokenAt === null ? null : Math.max(0, this.firstTokenAt - this.requestStartedAt),
+            totalMs: frame.elapsed_ms,
+            tokensOut: frame.tokens_out,
+          });
           break;
         case 'abstain': {
           // The model failed to write a citable sentence. A weak model does that
