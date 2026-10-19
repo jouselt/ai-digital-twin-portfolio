@@ -18,3 +18,12 @@ export {
 export { validateCitations, type CitationCheck } from './citation-validator';
 export { ABSENT_TOKEN, buildSystemPrompt } from './system-prompt';
 export { estimateTokens } from './token-estimate';
+export {
+  browserGpu,
+  FALLBACK_MESSAGE,
+  probeCapabilities,
+  type AdapterLike,
+  type Capability,
+  type CapabilityReason,
+  type GpuLike,
+} from './capabilities';
